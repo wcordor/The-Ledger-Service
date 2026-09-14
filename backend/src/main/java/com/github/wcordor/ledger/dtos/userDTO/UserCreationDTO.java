@@ -1,6 +1,6 @@
 package com.github.wcordor.ledger.dtos.userDTO;
 
-import com.github.wcordor.Role;
+import com.github.wcordor.ledger.Role;
 
 import jakarta.validation.constraints.NotBlank;
 

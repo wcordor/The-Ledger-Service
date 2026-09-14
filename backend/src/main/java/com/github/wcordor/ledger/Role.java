@@ -1,4 +1,4 @@
-package com.github.wcordor;
+package com.github.wcordor.ledger;
 
 public enum Role {
     

@@ -21,7 +21,6 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.github.wcordor.Role;
 import com.github.wcordor.ledger.dtos.accountDTO.*;
 import com.github.wcordor.ledger.dtos.transactionDTO.*;
 import com.github.wcordor.ledger.dtos.userDTO.*;

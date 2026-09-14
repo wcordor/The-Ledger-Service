@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.annotation.EnableRetry;
 
-import com.github.wcordor.Role;
 import com.github.wcordor.ledger.dtos.accountDTO.AccountResponseDTO;
 import com.github.wcordor.ledger.dtos.transactionDTO.TransactionResponseDTO;
 import com.github.wcordor.ledger.dtos.userDTO.UserResponseDTO;

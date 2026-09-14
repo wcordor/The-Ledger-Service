@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.github.wcordor.Role;
 import com.github.wcordor.ledger.dtos.accountDTO.AccountCreationDTO;
 import com.github.wcordor.ledger.dtos.accountDTO.AccountResponseDTO;
 import com.github.wcordor.ledger.dtos.transactionDTO.*;

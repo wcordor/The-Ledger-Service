@@ -20,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
-import com.github.wcordor.Role;
 import com.github.wcordor.ledger.controller.UserController;
 import com.github.wcordor.ledger.dtos.accountDTO.AccountCreationDTO;
 import com.github.wcordor.ledger.dtos.accountDTO.AccountPatchDTO;
