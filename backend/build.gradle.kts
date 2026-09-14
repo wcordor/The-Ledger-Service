@@ -30,7 +30,6 @@ dependencies {
 	implementation("org.hibernate.validator:hibernate-validator:9.1.0.Final")
 	implementation("org.openapitools:jackson-databind-nullable:0.2.10")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 }
 
