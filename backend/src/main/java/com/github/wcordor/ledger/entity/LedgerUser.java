@@ -7,6 +7,8 @@ import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.github.wcordor.Role;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -23,16 +25,19 @@ public class LedgerUser implements UserDetails {
     private String username;
     private String password;
 
+    private Role role;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.MERGE, orphanRemoval = true)
     private List<Account> accounts = new ArrayList<>();
 
     protected LedgerUser() {}
 
-    public LedgerUser(String firstName, String lastName, String username, String password) {
+    public LedgerUser(String firstName, String lastName, String username, String password, Role role) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
         this.password = password;
+        this.role = role;
 
     }
 
@@ -43,6 +48,10 @@ public class LedgerUser implements UserDetails {
 
     public Long getId() {
         return id;
+    }
+
+    public Role getRole() {
+        return role;
     }
 
     @Override

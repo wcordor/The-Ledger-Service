@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.annotation.EnableRetry;
 
+import com.github.wcordor.Role;
 import com.github.wcordor.ledger.dtos.accountDTO.AccountResponseDTO;
 import com.github.wcordor.ledger.dtos.transactionDTO.TransactionResponseDTO;
 import com.github.wcordor.ledger.dtos.userDTO.UserResponseDTO;
@@ -35,7 +36,7 @@ public class Demo {
 		return (args) -> {
 
 			UserResponseDTO userDTO1 = requestFactory.createDemoUser("John", "Smith", "jsmith",
-				"$2a$12$OcPK4aV9I39qU9IJTkbhZukUdA4N1O7CXV0YC75bKON/KiYWpNXQC"); // password: 1
+				"$2a$12$OcPK4aV9I39qU9IJTkbhZukUdA4N1O7CXV0YC75bKON/KiYWpNXQC", Role.USER); // password: 1
 
 			Long user1_id = userDTO1.id();
 
@@ -46,7 +47,7 @@ public class Demo {
 				"Checking", new BigDecimal("1000.00"), "GBP");
 
 			UserResponseDTO userDTO2 = requestFactory.createDemoUser("Bernard", "Jones", "bjones",
-				"$2a$12$fip3pRbbenWjFqjv1nhfHu4INrG83eN.bLyvQUADCKRXbqdXGzGS."); // password: 2
+				"$2a$12$fip3pRbbenWjFqjv1nhfHu4INrG83eN.bLyvQUADCKRXbqdXGzGS.", Role.USER); // password: 2
 
 			Long user2_id = userDTO2.id();
 
@@ -60,7 +61,7 @@ public class Demo {
 				"Checking", new BigDecimal("3000.00"), "USD");
 
 			UserResponseDTO userDTO3 = requestFactory.createDemoUser("Deborah", "Adams", "dadams",
-				"$2a$12$SJ1QAz30MHb5YlYJtYNfzeLrZwFP9zy0IBrZ9NBhw5QKO.yNZvGgi"); // password: 3
+				"$2a$12$SJ1QAz30MHb5YlYJtYNfzeLrZwFP9zy0IBrZ9NBhw5QKO.yNZvGgi", Role.USER); // password: 3
 
 			Long user3_id = userDTO3.id();
 
@@ -71,7 +72,7 @@ public class Demo {
 				"Checking", new BigDecimal("1000.00"), "USD");
 
 			UserResponseDTO userDTO4 = requestFactory.createDemoUser("Mary", "Johnson", "mjohnson",
-				"$2a$12$0n/kVnACkkrKzYIfYM0wN.a5iErdHAOmi4S51Wg.HxG5v4.PqVyi2"); // password: 4
+				"$2a$12$0n/kVnACkkrKzYIfYM0wN.a5iErdHAOmi4S51Wg.HxG5v4.PqVyi2", Role.USER); // password: 4
 
 			Long user4_id = userDTO4.id();
 
@@ -80,6 +81,9 @@ public class Demo {
 
 			AccountResponseDTO accountDTO9 = requestFactory.createDemoAccount(user4_id,
 				"Checking", new BigDecimal("1500.00"), "USD");
+
+			UserResponseDTO admin = requestFactory.createDemoUser("Admin", "User", "admin",
+				"$2a$12$Bvn4neIXr3Sf68k7zLfMAO6844POfyDVwhcf4fdRgPd9qpAI/P6Ju", Role.ADMIN); // password: 99
 
 			logger.info("");
 			logger.info("List of Preloaded Users:");

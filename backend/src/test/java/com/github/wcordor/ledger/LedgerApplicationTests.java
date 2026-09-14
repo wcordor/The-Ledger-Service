@@ -21,6 +21,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import com.github.wcordor.Role;
 import com.github.wcordor.ledger.dtos.accountDTO.*;
 import com.github.wcordor.ledger.dtos.transactionDTO.*;
 import com.github.wcordor.ledger.dtos.userDTO.*;
@@ -99,7 +100,7 @@ class LedgerApplicationTests {
 		transactionRepository.deleteAll();
 		idempotencyKeyRepository.deleteAll();
 
-        userDTO = requestFactory.createDemoUser("Account", "Owner I", "owner1", "p");
+        userDTO = requestFactory.createDemoUser("Account", "Owner I", "owner1", "p", Role.USER);
         user_id = userDTO.id();
 
         accountDTO = requestFactory.createDemoAccount(user_id, "Account I",
@@ -109,7 +110,7 @@ class LedgerApplicationTests {
 
         userDTO = userService.getUser(user_id);
        
-        userDTO2 = requestFactory.createDemoUser("Account", "Owner II","owner2", "a");
+        userDTO2 = requestFactory.createDemoUser("Account", "Owner II","owner2", "a", Role.USER);
         user2_id = userDTO2.id();
 
         accountDTO2 = requestFactory.createDemoAccount(user2_id, "Account II", new BigDecimal("200.00"), "USD");
@@ -307,7 +308,7 @@ class LedgerApplicationTests {
 	@Test
 	void testUserServiceFunctions() {
 
-		UserCreationDTO creationDTO = new UserCreationDTO("Owner", "of Account I","owner2", "t");
+		UserCreationDTO creationDTO = new UserCreationDTO("Owner", "of Account I","owner2", "t", Role.USER);
 		userDTO = userService.replaceUser(user_id, creationDTO);
 		assertEquals("Owner", userDTO.firstName());
 		assertEquals("of Account I", userDTO.lastName());
@@ -625,7 +626,7 @@ class LedgerApplicationTests {
 		assertTrue(user.getAccounts().contains(account) && userDTO3.accounts().contains(account.getInfo()));
 		assertEquals(user.getId(), userDTO3.id());
 
-		UserCreationDTO creationDTO = new UserCreationDTO("New", "User","owner3", "t");
+		UserCreationDTO creationDTO = new UserCreationDTO("New", "User","owner3", "t", Role.USER);
 		LedgerUser user3 = userMapper.toUser(creationDTO);
 
 		assertEquals(creationDTO.firstName(), user3.getFirstName());
@@ -651,7 +652,7 @@ class LedgerApplicationTests {
 	
 		String idempotencyKey = UUID.randomUUID().toString();
 
-		UserCreationDTO userCreationDTO = new UserCreationDTO("Idempotent", "User", "owner2", "i");
+		UserCreationDTO userCreationDTO = new UserCreationDTO("Idempotent", "User", "owner2", "i", Role.USER);
 		userService.createUser(idempotencyKey, userCreationDTO);
 
 		assertThrows(IdempotencyKeyAlreadyExistsException.class, () -> {

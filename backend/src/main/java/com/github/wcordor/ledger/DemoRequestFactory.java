@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.github.wcordor.Role;
 import com.github.wcordor.ledger.dtos.accountDTO.AccountCreationDTO;
 import com.github.wcordor.ledger.dtos.accountDTO.AccountResponseDTO;
 import com.github.wcordor.ledger.dtos.transactionDTO.*;
@@ -42,10 +43,10 @@ public class DemoRequestFactory {
         this.transactionService = transactionService;
     }
     
-    public UserResponseDTO createDemoUser(String firstName, String lastName, String username, String password) {
+    public UserResponseDTO createDemoUser(String firstName, String lastName, String username, String password, Role role) {
 
         return userService.createUser(UUID.randomUUID().toString(),
-			new UserCreationDTO(firstName, lastName, username, password));
+			new UserCreationDTO(firstName, lastName, username, password, role));
     }
 
     public AccountResponseDTO createDemoAccount(Long userId, String name, BigDecimal initialDeposit, String currency) {
