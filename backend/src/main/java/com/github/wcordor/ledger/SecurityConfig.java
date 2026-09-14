@@ -21,7 +21,8 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers(HttpMethod.POST, "/users").permitAll()
 				.requestMatchers("/", "/index.html").permitAll()
-                .anyRequest().authenticated()
+				.requestMatchers("/admin").hasRole("ADMIN")
+        		.anyRequest().authenticated()
 			)
 			.httpBasic(Customizer.withDefaults())
 			.formLogin(Customizer.withDefaults());

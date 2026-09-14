@@ -37,7 +37,7 @@ public class UserController {
 		this.transactionService = transactionService;
 	}
 
-    @GetMapping("/users")
+    @GetMapping("/admin")
 	public List<String> getUsers() {
 
 		return userService.getAll();
