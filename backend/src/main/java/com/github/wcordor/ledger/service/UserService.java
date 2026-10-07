@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
 import com.github.wcordor.ledger.exception.NullPatchFieldException;
 import com.github.wcordor.ledger.exception.UserDeletionFailureException;
 import com.github.wcordor.ledger.exception.UserNotFoundException;
+import com.github.wcordor.ledger.exception.UsernameAlreadyExistsException;
 import com.github.wcordor.ledger.mapper.UserMapper;
 import com.github.wcordor.ledger.repository.IdempotencyKeyRepository;
 import com.github.wcordor.ledger.repository.UserRepository;
@@ -28,31 +30,43 @@ public class UserService implements UserDetailsService {
     private final UserRepository repository;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final UserMapper userMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository repository, IdempotencyKeyRepository idempotencyKeyRepository, UserMapper userMapper) {
+    public UserService(UserRepository repository, IdempotencyKeyRepository idempotencyKeyRepository,
+        UserMapper userMapper, BCryptPasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User " + username + "not found"));
+        String password = passwordEncoder.encode(user.getPassword());
 
-        return User.builder().username(username).password(user.getPassword()).roles(user.getRole().name()).build();
+        return User.builder().username(username).password(password).roles(user.getRole().name()).build();
     }
 
     @Transactional
-    public UserResponseDTO replaceUser(Long id, UserCreationDTO userDTO) {
-        LedgerUser user = repository.findWithLockingById(id).orElseThrow(() -> new UserNotFoundException(id));
+    public UserResponseDTO replaceUser(String username/*, Long id*/, UserCreationDTO userDTO) {
+        LedgerUser user = repository.findWithLockingByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User " + username + "not found"));
+
+        /*if (!user.getId().equals(id)) {
+            throw new UserNotFoundException(id);
+        }*/
+
         user.setFirstName(userDTO.firstName());
         user.setLastName(userDTO.lastName());
+        user.setUsername(userDTO.username());
+        user.setPassword(userDTO.password());
+        user.setRole(userDTO.role());
 
         @SuppressWarnings("null")
         List<String> accounts = user.getAccounts().stream().map(Account::getName).toList();
         
-        return new UserResponseDTO(user.getFirstName(), user.getLastName(), user.getUsername(), accounts, id);
+        return new UserResponseDTO(user.getFirstName(), user.getLastName(), user.getUsername(), accounts, user.getId());
     }
 
     @SuppressWarnings("null")
@@ -71,6 +85,13 @@ public class UserService implements UserDetailsService {
             }
         }
 
+        String username = userDTO.username();
+        LedgerUser sameName = repository.findByUsername(username).orElse(null);
+
+        if (sameName != null) {
+            throw new UsernameAlreadyExistsException(username);
+        }
+
         LedgerUser user = repository.save(userMapper.toUser(userDTO));
 
         IdempotencyKey newKey = new IdempotencyKey(idempotencyKey, LocalDateTime.now().plusHours(24));
@@ -79,25 +100,26 @@ public class UserService implements UserDetailsService {
         return userMapper.toDTO(user);
     }
 
-    public UserResponseDTO getUser(Long id) {
-        LedgerUser user = repository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+    public UserResponseDTO getUser(/*Long id*/String username) {
+        //LedgerUser user = repository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
         return userMapper.toDTO(user);
     }
 
-    public void deleteUser(Long id) {
-        LedgerUser user = repository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+    public void deleteUser(/*Long id*/String username) {
+        LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
         if (user.getAccounts().size() == 0) {
-            repository.deleteById(id);
+            repository.deleteById(user.getId());
         }
         else {
-            throw new UserDeletionFailureException(id);
+            throw new UserDeletionFailureException();
         }
         
     }
 
     @Transactional
-    public UserResponseDTO updateUser(String idempotencyKey, Long id, UserPatchDTO userDTO) {
+    public UserResponseDTO updateUser(String idempotencyKey, /*Long id*/String username, UserPatchDTO userDTO) {
         IdempotencyKey savedKey = idempotencyKeyRepository.findByKey(idempotencyKey).orElse(null);
 
         if (savedKey != null) {
@@ -108,7 +130,7 @@ public class UserService implements UserDetailsService {
             }
         }
 
-        LedgerUser user = repository.findWithLockingById(id).orElseThrow(() -> new UserNotFoundException(id));
+        LedgerUser user = repository.findWithLockingByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
         if (userDTO.getFirstName().isPresent()) {
             user.setFirstName(userDTO.getFirstName().get());

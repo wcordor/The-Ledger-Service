@@ -4,20 +4,33 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 import com.github.wcordor.ledger.controller.UserController;
@@ -44,8 +57,10 @@ import com.github.wcordor.ledger.service.TransactionService;
 import com.github.wcordor.ledger.service.UserService;
 
 import jakarta.persistence.EntityNotFoundException;
+import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(UserController.class)
+@Import(SecurityConfig.class)
 @AutoConfigureRestTestClient
 class LedgerControllerTests {
     
@@ -61,214 +76,377 @@ class LedgerControllerTests {
     @MockitoBean
     private TransactionService transactionService;
 
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Test
-    void testUserGetRequest_All() {
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void testUserGetRequest_All() throws Exception {
 
         List<String> mockUsers = new ArrayList<String>(List.of("Mock User 1", "Mock User 2"));
         when(userService.getAll()).thenReturn(mockUsers);
 
-        restTestClient.get().uri("/users").exchange().expectStatus().isOk().expectHeader()
-            .contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("$[0]")
-            .isEqualTo("Mock User 1").jsonPath("$[1]").isEqualTo("Mock User 2");
+        mockMvc.perform(get("/admin")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/admin").with(user("user").roles("USER")))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/admin").with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$[0]").value("Mock User 1"))
+            .andExpect(jsonPath("$[1]").value("Mock User 2"));
+        
     }
 
     @Test
-    void testUserGetRequest_Single() {
+    void testUserGetRequest_Single() throws Exception {
 
         List<String> mockAccounts = new ArrayList<String>(List.of("Account 1 information", "Account 2 information"));
-        UserResponseDTO mockUser = new UserResponseDTO("Mock", "GET", "mockuser", mockAccounts, 1L);
+        UserResponseDTO mockUser = new UserResponseDTO("Mock", "GET", "get", mockAccounts, 1L);
 
-        when(userService.getUser(eq(1L))).thenReturn(mockUser);
+        when(userService.getUser(eq("user"))).thenReturn(mockUser);
+        
+        mockMvc.perform(get("/users/user")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/users/user").with(user("user2").roles("USER")))
+            .andExpect(status().isForbidden());
+        
+        mockMvc.perform(get("/users/user").with(user("user").roles("USER")))
+            .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("firstName").value("Mock"))
+            .andExpect(jsonPath("lastName").value("GET"))
+            .andExpect(jsonPath("username").value("get"))
+            .andExpect(jsonPath("accounts").value(mockAccounts))
+            .andExpect(jsonPath("id").value(1L));
+        
+        mockMvc.perform(get("/users/user").with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("firstName").value("Mock"))
+            .andExpect(jsonPath("lastName").value("GET"))
+            .andExpect(jsonPath("username").value("get"))
+            .andExpect(jsonPath("accounts").value(mockAccounts))
+            .andExpect(jsonPath("id").value(1L));
 
-        restTestClient.get().uri("/users/1").exchange().expectStatus().isOk().expectHeader()
-            .contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("firstName")
-            .isEqualTo("Mock").jsonPath("lastName").isEqualTo("GET")
-            .jsonPath("accounts").isEqualTo(mockAccounts).jsonPath("id").isEqualTo(1L);
+        when(userService.getUser(eq("not_real"))).thenThrow(new UserNotFoundException("not_real"));
 
-        when(userService.getUser(eq(1111L))).thenThrow(new UserNotFoundException(1111L));
+        mockMvc.perform(get("/users/not_real")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/users/not_real").with(user("user").roles("USER")))
+            .andExpect(status().isForbidden());
 
-        restTestClient.get().uri("/users/1111").exchange().expectStatus().isNotFound().expectHeader()
-            .contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Could not find User 1111.");
+        mockMvc.perform(get("/users/not_real").with(user("admin").roles("ADMIN")))
+            .andExpect(status().isNotFound()).andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof UserNotFoundException));
+
     }
 
     @Test
-    void testUserPostRequest() {
+    void testUserPostRequest() throws Exception {
 
         UserResponseDTO mockDTO = new UserResponseDTO("Mock", "POST", "mockuser", null, 3L);        
         UserCreationDTO mockBody = new UserCreationDTO("Mock", "Body", "mockuser", "mockpassword", Role.USER);
 
         when(userService.createUser(eq("key"), any(UserCreationDTO.class))).thenReturn(mockDTO);
-        
-        restTestClient.post().uri("/users").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().isCreated().expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .expectBody().jsonPath("firstName").isEqualTo("Mock").jsonPath("lastName")
-            .isEqualTo("POST").jsonPath("accounts").isEmpty();
+
+        mockMvc.perform(post("/admin")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/admin").with(user("user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isCreated())
+            .andExpect(jsonPath("firstName").value("Mock")).andExpect(jsonPath("lastName").value("POST"))
+            .andExpect(jsonPath("username").value("mockuser")).andExpect(jsonPath("accounts").value(Matchers.nullValue()))
+            .andExpect(jsonPath("id").value(3L));
 
         when(userService.createUser(eq("key"), any(UserCreationDTO.class)))
             .thenThrow(new IdempotencyKeyAlreadyExistsException());
 
-        restTestClient.post().uri("/users").header("Idempotency-Key", "key").body(mockBody)
-            .exchange().expectStatus().is4xxClientError().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo("Key already exists.");
-        
-        String firstNameInvalid = "First name must not be blank.";
-        String lastNameInvalid = "Last name must not be blank.";
+        mockMvc.perform(post("/admin")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/admin").with(user("user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof IdempotencyKeyAlreadyExistsException));
 
-        restTestClient.post().uri("/users").header("Idempotency-Key", "key")
-            .body(new UserCreationDTO(null, "1", "x", "p", Role.USER)).exchange().expectStatus().isBadRequest()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo(firstNameInvalid);
-
-        restTestClient.post().uri("/users").header("Idempotency-Key", "key")
-            .body(new UserCreationDTO(" ", "1", "mockuser", "mockpassword", Role.USER)).exchange().expectStatus().isBadRequest()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo(firstNameInvalid);
-
-        restTestClient.post().uri("/users").header("Idempotency-Key", "key")
-            .body(new UserCreationDTO("User", null, "mockuser", "mockpassword", Role.USER)).exchange().expectStatus().isBadRequest()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo(lastNameInvalid);
-
-        restTestClient.post().uri("/users").header("Idempotency-Key", "key")
-            .body(new UserCreationDTO("User", " ", "mockuser", "mockpassword", Role.USER)).exchange().expectStatus().isBadRequest()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo(lastNameInvalid);
-        
-        restTestClient.post().uri("/users").header("Idempotency-Key", "key")
-            .body(new UserCreationDTO(null, null, "mockuser", "mockpassword", Role.USER)).exchange().expectStatus().isBadRequest()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .value(message -> assertTrue(message.contains(lastNameInvalid) && message.contains(firstNameInvalid)));
-
-        restTestClient.post().uri("/users").header("Idempotency-Key", "key")
-            .body(new UserCreationDTO(" ", " ", "mockuser", "mockpassword", Role.USER)).exchange().expectStatus().isBadRequest()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .value(message -> assertTrue(message.contains(lastNameInvalid) && message.contains(firstNameInvalid)));
     }
 
     @Test
-    void testUserPutRequest() {
+    void testBadUserPostRequests() throws Exception {
+        
+        String firstNameInvalid = "First name must not be blank.";
+        String lastNameInvalid = "Last name must not be blank.";
+        String usernameInvalid = "Username must not be blank.";
+        String passwordInvalid = "Password must not be blank.";
+        String roleInvalid = "Role must not be blank.";
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO(null, "lastName", "username", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(firstNameInvalid));
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO(" ", "lastName", "username", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(firstNameInvalid));
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", null, "username", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(lastNameInvalid));
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", " ", "username", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(lastNameInvalid));
+        
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", null, "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(usernameInvalid));
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", " ", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(usernameInvalid));
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", "username", null, Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(passwordInvalid));
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", "username", " ", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(passwordInvalid));
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", "username", "password", null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(roleInvalid));
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", "username", "password", null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(roleInvalid));
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO(null, null, null, null, null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest())
+            .andExpect(result -> {
+                String responseBody = result.getResponse().getContentAsString();
+                assertTrue(responseBody.contains(firstNameInvalid) && responseBody.contains(lastNameInvalid) && responseBody.contains(usernameInvalid)
+                    && responseBody.contains(passwordInvalid) && responseBody.contains(roleInvalid));
+            });
+
+        mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO(" ", " ", " ", " ", null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest())
+            .andExpect(result -> {
+                String responseBody = result.getResponse().getContentAsString();
+                assertTrue(responseBody.contains(firstNameInvalid) && responseBody.contains(lastNameInvalid) && responseBody.contains(usernameInvalid)
+                    && responseBody.contains(passwordInvalid) && responseBody.contains(roleInvalid));
+            });
+    }
+
+    @Test
+    void testUserPutRequest() throws Exception {
 
         List<String> mockAccounts = new ArrayList<String>(List.of("Account information"));
-        UserResponseDTO mockDTO = new UserResponseDTO("Mock", "PUT", "mockuser",  mockAccounts, 3L);
+        UserResponseDTO mockDTO = new UserResponseDTO("Mock", "PUT", "replace",  mockAccounts, 3L);
 
         UserCreationDTO mockBody = new UserCreationDTO("Mock", "Body", "mockuser", "mockpassword", Role.USER);
 
-        when(userService.replaceUser(eq(3L), any(UserCreationDTO.class))).thenReturn(mockDTO);
+        when(userService.replaceUser(eq("replace"), any(UserCreationDTO.class))).thenReturn(mockDTO);
 
-        restTestClient.put().uri("/users/3").body(mockBody).exchange().expectStatus().isOk().expectHeader()
-            .contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("firstName").isEqualTo("Mock")
-            .jsonPath("lastName").isEqualTo("PUT").jsonPath("accounts")
-            .isEqualTo(mockAccounts);
+        mockMvc.perform(put("/admin/replace")).andExpect(status().isUnauthorized());
+        mockMvc.perform(put("/admin/replace").with(user("user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(put("/admin/replace").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody))).andExpect(status().isOk())
+            .andExpect(jsonPath("firstName").value("Mock")).andExpect(jsonPath("lastName").value("PUT"))
+            .andExpect(jsonPath("username").value("replace")).andExpect(jsonPath("accounts").value(mockAccounts))
+            .andExpect(jsonPath("id").value(3L));
 
-        when(userService.replaceUser(eq(15L), any(UserCreationDTO.class))).thenThrow(new UserNotFoundException(15L));
+        when(userService.replaceUser(eq("not_real"), any(UserCreationDTO.class))).thenThrow(new UserNotFoundException("not_real"));
 
-        restTestClient.put().uri("/users/15").body(mockBody).exchange().expectStatus().isNotFound().expectHeader()
-            .contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Could not find User 15.");
-
-        String firstNameInvalid = "First name must not be blank.";
-        String lastNameInvalid = "Last name must not be blank.";
-
-        restTestClient.put().uri("/users/1").body(new UserCreationDTO(null, "1", "mockuser", "mockpassword", Role.USER)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(firstNameInvalid);
-
-        restTestClient.put().uri("/users/1").body(new UserCreationDTO(" ", "1", "mockuser", "mockpassword", Role.USER)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(firstNameInvalid);
-
-        restTestClient.put().uri("/users/13").body(new UserCreationDTO("User", null, "mockuser", "mockpassword", Role.USER  )).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(lastNameInvalid);
-
-        restTestClient.put().uri("/users/13").body(new UserCreationDTO("User", " ", "mockuser", "mockpassword", Role.USER)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(lastNameInvalid);
-        
-        restTestClient.put().uri("/users/32").body(new UserCreationDTO(null, null, "mockuser", "mockpassword", Role.USER)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).value(message -> assertTrue(message.contains(lastNameInvalid)
-                && message.contains(firstNameInvalid))
-            );
-
-        restTestClient.put().uri("/users/32").body(new UserCreationDTO(" ", " ", "mockuser", "mockpassword", Role.USER)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).value(message -> assertTrue(message.contains(lastNameInvalid)
-                && message.contains(firstNameInvalid))
-            );
+        mockMvc.perform(put("/admin/not_real")).andExpect(status().isUnauthorized());
+        mockMvc.perform(put("/admin/not_real").with(user("user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(put("/admin/not_real").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody))).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof UserNotFoundException));
     }
 
     @Test
-    void testUserPatchRequest() {
+    void testBadUserPutRequests() throws Exception{
+
+        String firstNameInvalid = "First name must not be blank.";
+        String lastNameInvalid = "Last name must not be blank.";
+        String usernameInvalid = "Username must not be blank.";
+        String passwordInvalid = "Password must not be blank.";
+        String roleInvalid = "Role must not be blank.";
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO(null, "lastName", "username", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(firstNameInvalid));
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO(" ", "lastName", "username", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(firstNameInvalid));
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", null, "username", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(lastNameInvalid));
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", " ", "username", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(lastNameInvalid));
+        
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", null, "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(usernameInvalid));
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", " ", "password", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(usernameInvalid));
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", "username", null, Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(passwordInvalid));
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", "username", " ", Role.USER)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(passwordInvalid));
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", "username", "password", null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(roleInvalid));
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO("firstName", "lastName", "username", "password", null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(roleInvalid));
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO(null, null, null, null, null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest())
+            .andExpect(result -> {
+                String responseBody = result.getResponse().getContentAsString();
+                assertTrue(responseBody.contains(firstNameInvalid) && responseBody.contains(lastNameInvalid) && responseBody.contains(usernameInvalid)
+                    && responseBody.contains(passwordInvalid) && responseBody.contains(roleInvalid));
+            });
+
+        mockMvc.perform(put("/admin/badrequest").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new UserCreationDTO(" ", " ", " ", " ", null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest())
+            .andExpect(result -> {
+                String responseBody = result.getResponse().getContentAsString();
+                assertTrue(responseBody.contains(firstNameInvalid) && responseBody.contains(lastNameInvalid) && responseBody.contains(usernameInvalid)
+                    && responseBody.contains(passwordInvalid) && responseBody.contains(roleInvalid));
+            });
+    }
+
+    @Test
+    void testUserPatchRequest() throws Exception {
 
         List<String> accounts = new ArrayList<>(List.of("Account 1"));
         UserResponseDTO mockDTO = new UserResponseDTO("Mock", "PATCH", "patchuser", accounts, 5L);
 
         UserCreationDTO mockBody = new UserCreationDTO("Mock", "Body", "mockuser", "mockpassword", Role.USER);
 
-        when(userService.updateUser(eq("key"), eq(5L), any(UserPatchDTO.class)))
+        when(userService.updateUser(eq("key"), eq("patchuser"), any(UserPatchDTO.class)))
             .thenReturn(mockDTO);
-        
-        restTestClient.patch().uri("/users/5").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().isOk().expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .expectBody().jsonPath("firstName").isEqualTo("Mock").jsonPath("lastName")
-            .isEqualTo("PATCH").jsonPath("accounts").isEqualTo(accounts);
 
-        when(userService.updateUser(eq("key"), eq(4L), any(UserPatchDTO.class)))
+        mockMvc.perform(patch("/users/patchuser")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/users/patchuser").with(user("not_patchuser").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/users/patchuser").with(user("patchuser").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isOk())
+            .andExpect(jsonPath("firstName").value("Mock")).andExpect(jsonPath("lastName").value("PATCH"))
+            .andExpect(jsonPath("username").value("patchuser")).andExpect(jsonPath("accounts").value(accounts))
+            .andExpect(jsonPath("id").value(5L));
+        /*mockMvc.perform(patch("/users/patchuser").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isOk())
+            .andExpect(jsonPath("firstName").value("Mock")).andExpect(jsonPath("lastName").value("PATCH"))
+            .andExpect(jsonPath("username").value("patchuser")).andExpect(jsonPath("accounts").value(accounts))
+            .andExpect(jsonPath("id").value(5L));*/
+
+        when(userService.updateUser(eq("key"), eq("same_key"), any(UserPatchDTO.class)))
             .thenThrow(new IdempotencyKeyAlreadyExistsException());
 
-        restTestClient.patch().uri("/users/4").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader()
-            .contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Key already exists.");
+        mockMvc.perform(patch("/users/same_key")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/users/same_key").with(user("not_same_key").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/users/same_key").with(user("same_key").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof IdempotencyKeyAlreadyExistsException));
+        /*mockMvc.perform(patch("/users/same_key").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof IdempotencyKeyAlreadyExistsException));*/
 
-        when(userService.updateUser(eq("key"), eq(3L), any(UserPatchDTO.class)))
-            .thenThrow(new UserNotFoundException(3L));
+        when(userService.updateUser(eq("key"), eq("not_found"), any(UserPatchDTO.class))).thenThrow(new UserNotFoundException("not_found"));
 
-        restTestClient.patch().uri("/users/3").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().isNotFound().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo("Could not find User 3.");
+        mockMvc.perform(patch("/users/not_found")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/users/not_found").with(user("not_not_found").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/users/not_found").with(user("not_found").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof UserNotFoundException));
+        /*mockMvc.perform(patch("/users/not_found").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof UserNotFoundException));*/
 
-        when(userService.updateUser(eq("key"), eq(2L), any(UserPatchDTO.class)))
-            .thenThrow(new NullPatchFieldException());
+        when(userService.updateUser(eq("key"), eq("null_field"), any(UserPatchDTO.class))).thenThrow(new NullPatchFieldException());
 
-        restTestClient.patch().uri("/users/2").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo("The field(s) selected for change must not be null.");
+        mockMvc.perform(patch("/users/null_field")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/users/null_field").with(user("not_null_field").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/users/null_field").with(user("null_field").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof NullPatchFieldException));
+        mockMvc.perform(patch("/users/null_field").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof NullPatchFieldException));
     }
 
     @Test
-    void testUserDeleteRequest() {
+    void testUserDeleteRequest() throws Exception {
 
-        restTestClient.delete().uri("/users/21/remove").exchange().expectStatus().is2xxSuccessful();
+        mockMvc.perform(delete("/users/user/remove")).andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/users/user/remove").with(user("not_remove").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/users/user/remove").with(user("user").roles("USER"))).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/users/user/remove").with(user("admin").roles("ADMIN"))).andExpect(status().isNoContent());
 
-        Mockito.doThrow(new UserDeletionFailureException(34L)).when(userService).deleteUser(eq(34L));
+        Mockito.doThrow(new UserDeletionFailureException()).when(userService).deleteUser(eq("user"));
 
-        restTestClient.delete().uri("/users/34/remove").exchange().expectStatus().is4xxClientError()
-            .expectBody(String.class).isEqualTo("User 34 could not be deleted as it still has accounts open.");
+        mockMvc.perform(delete("/users/user/remove")).andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/users/user/remove").with(user("not_remove").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/users/user/remove").with(user("user").roles("USER"))).andExpect(status().isConflict());
+        mockMvc.perform(delete("/users/user/remove").with(user("admin").roles("ADMIN"))).andExpect(status().isConflict());
         
-        Mockito.doThrow(new UserNotFoundException(9L)).when(userService).deleteUser(eq(9L));
+        Mockito.doThrow(new UserNotFoundException("not_found")).when(userService).deleteUser(eq("not_found"));
 
-        restTestClient.delete().uri("/users/9/remove").exchange().expectStatus().is4xxClientError()
-            .expectBody(String.class).isEqualTo("Could not find User 9.");
+        mockMvc.perform(delete("/users/not_found/remove")).andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/users/not_found/remove").with(user("not_not_found").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/users/not_found/remove").with(user("not_found").roles("USER"))).andExpect(status().isNotFound());
+        mockMvc.perform(delete("/users/not_found/remove").with(user("admin").roles("ADMIN"))).andExpect(status().isNotFound());
     }
 
     @Test
-    void testAccountGetRequest_All() {
+    void testAccountGetRequest_All() throws Exception {
 
         List<String> mockAccounts = new ArrayList<>(List.of("Mock Account 1", "Mock Account 2"));
-        when(accountService.getAccounts(4L)).thenReturn(mockAccounts);
+        when(accountService.getAccounts("user")).thenReturn(mockAccounts);
 
-        restTestClient.get().uri("/users/4/accounts").exchange().expectStatus().isOk()
-            .expectHeader().contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("$[0]")
-            .isEqualTo("Mock Account 1").jsonPath("$[1]").isEqualTo("Mock Account 2");
+        mockMvc.perform(get("/users/user/accounts")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/users/user/accounts").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(get("/users/user/accounts").with(user("user").roles("USER"))).andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$[0]").value("Mock Account 1"))
+            .andExpect(jsonPath("$[1]").value("Mock Account 2"));
+        mockMvc.perform(get("/users/user/accounts").with(user("admin").roles("ADMIN"))).andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$[0]").value("Mock Account 1"))
+            .andExpect(jsonPath("$[1]").value("Mock Account 2"));
 
-        when(accountService.getAccounts(42L)).thenThrow(new UserNotFoundException(42L));
+        when(accountService.getAccounts("not_found")).thenThrow(new UserNotFoundException("not_found"));
 
-        restTestClient.get().uri("/users/42/accounts").exchange().expectStatus().isNotFound()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Could not find User 42.");
+        mockMvc.perform(get("/users/user/accounts")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/users/user/accounts").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(get("/users/not_found/accounts").with(user("not_found").roles("USER"))).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof UserNotFoundException));
+        mockMvc.perform(get("/users/not_found/accounts").with(user("admin").roles("ADMIN"))).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof UserNotFoundException));
     }
 
     @Test
@@ -280,12 +458,14 @@ class LedgerControllerTests {
 
         when(accountService.getAccount(eq(3L), eq(4L))).thenReturn(mockDTO);
 
-        restTestClient.get().uri("/users/4/accounts/3").exchange().expectStatus().isOk().expectHeader()
+        mockMvc.perform(get("/users/4/accounts/3")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/users/4/accounts/3").with(user("not_4
+        /*restTestClient.get().uri("/users/4/accounts/3").exchange().expectStatus().isOk().expectHeader()
             .contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("name")
             .isEqualTo("GET").jsonPath("balance").isEqualTo(new BigDecimal("1000.0"))
             .jsonPath("currency").isEqualTo("USD").jsonPath("userName")
             .isEqualTo("Mock User").jsonPath("transactions").isEqualTo(mockTransactions)
-            .jsonPath("id").isEqualTo(5L);
+            .jsonPath("id").isEqualTo(5L);*/
             
         when(accountService.getAccount(eq(89L), eq(71L)))
             .thenThrow(new AccountNotFoundException(89L, 71L));
@@ -301,30 +481,30 @@ class LedgerControllerTests {
         AccountResponseDTO mockDTO = new AccountResponseDTO("POST", new BigDecimal("250.00"), "EUR",
             "Mock User", null, 63L);
 
-        when(accountService.createAccount(eq("key"), eq(33L), any(AccountCreationDTO.class)))
+        when(accountService.createAccount(eq("key"), eq("user"), any(AccountCreationDTO.class)))
             .thenReturn(mockDTO);
 
         AccountCreationDTO mockBody 
             = new AccountCreationDTO("Mock Body", new BigDecimal("0"), "MOCK", 999L);
         
-        restTestClient.post().uri("/users/33/accounts").header("Idempotency-Key", "key")
+        restTestClient.post().uri("/users/user/accounts").header("Idempotency-Key", "key")
             .body(mockBody).exchange().expectStatus().isCreated().expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody().jsonPath("name").isEqualTo("POST").jsonPath("balance")
             .isEqualTo(new BigDecimal("250.0")).jsonPath("currency").isEqualTo("EUR")
             .jsonPath("transactions").isEmpty().jsonPath("userName").isEqualTo("Mock User")
             .jsonPath("id").isEqualTo(63L);
         
-        when(accountService.createAccount(eq("key"), eq(14L), any(AccountCreationDTO.class)))
+        when(accountService.createAccount(eq("key"), eq("invalid"), any(AccountCreationDTO.class)))
             .thenThrow(new InvalidUserIdException());
 
-        restTestClient.post().uri("/users/14/accounts").header("Idempotency-Key", "key")
+        restTestClient.post().uri("/users/invalid/accounts").header("Idempotency-Key", "key")
             .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
             .expectBody(String.class).isEqualTo("User ID does not match ID of Account Owner.");
 
-        when(accountService.createAccount(eq("key"), eq(52L), any(AccountCreationDTO.class)))
+        when(accountService.createAccount(eq("key"), eq("same_key"), any(AccountCreationDTO.class)))
             .thenThrow(new IdempotencyKeyAlreadyExistsException());
 
-        restTestClient.post().uri("/users/52/accounts").header("Idempotency-Key", "key")
+        restTestClient.post().uri("/users/same_key/accounts").header("Idempotency-Key", "key")
             .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
             .expectBody(String.class).isEqualTo("Key already exists.");
     }

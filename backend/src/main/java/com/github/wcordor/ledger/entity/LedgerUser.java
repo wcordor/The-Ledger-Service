@@ -53,6 +53,11 @@ public class LedgerUser implements UserDetails {
     public Role getRole() {
         return role;
     }
+    
+    public void setRole(Role role) {
+        
+        this.role = role;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -64,9 +69,19 @@ public class LedgerUser implements UserDetails {
         return password;
     }
 
+    public void setPassword(String password) {
+
+        this.password = password;
+    }
+
     @Override
     public String getUsername() {
         return username;
+    }
+
+    public void setUsername(String username) {
+        
+        this.username = username;
     }
 
     public String getName() {

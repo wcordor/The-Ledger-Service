@@ -48,16 +48,18 @@ public class DemoRequestFactory {
 			new UserCreationDTO(firstName, lastName, username, password, role));
     }
 
-    public AccountResponseDTO createDemoAccount(Long userId, String name, BigDecimal initialDeposit, String currency) {
+    public AccountResponseDTO createDemoAccount(/*Long userId*/String username, String name, BigDecimal initialDeposit, String currency) {
 
+        LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
+        
         return accountService.createAccount(
-            UUID.randomUUID().toString(), userId, new AccountCreationDTO(name, initialDeposit, currency, userId)
+            UUID.randomUUID().toString(), username, new AccountCreationDTO(name, initialDeposit, currency, user.getId())
         );    
     }
 
-    public LedgerUser getDemoUser(Long id) {
+    public LedgerUser getDemoUser(/*Long id*/String username) {
         
-        return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        return userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
     }
 
     public Account getDemoAccount(Long accountId, Long userId) {

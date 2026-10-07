@@ -43,44 +43,44 @@ public class UserController {
 		return userService.getAll();
 	}
 
-    @PostMapping("/users")
+    @PostMapping("/admin")
 	public ResponseEntity<?> newUser(@RequestHeader("Idempotency-Key") String idempotencyKey, @Valid @RequestBody UserCreationDTO userDTO) {
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(idempotencyKey, userDTO));
 	}
 
-	@GetMapping("/users/{id}")
-	public UserResponseDTO one(@PathVariable("id") Long id) {
+	@GetMapping("/users/{username}")
+	public UserResponseDTO one(@PathVariable("username") String username/*@PathVariable("id") Long id*/) {
 		
-		return userService.getUser(id);
+		return userService.getUser(username);
 	}
 
-	@PutMapping("/users/{id}")
-	public ResponseEntity<?> replaceUser(@PathVariable Long id, @Valid @RequestBody UserCreationDTO userDTO) {
+	@PutMapping("/admin/{username}")
+	public ResponseEntity<?> replaceUser(@PathVariable("username") String username, Long id, @Valid @RequestBody UserCreationDTO userDTO) {
 		
-		return ResponseEntity.ok(userService.replaceUser(id, userDTO));
+		return ResponseEntity.ok(userService.replaceUser(username, /*id, */userDTO));
 	}
 
-	@PatchMapping("/users/{id}")
+	@PatchMapping("/users/{username}")
 	public ResponseEntity<?> updateUser(@RequestHeader("Idempotency-Key") String idempotencyKey,
-		@PathVariable Long id, @RequestBody UserPatchDTO patchDTO) {
+		@PathVariable("username") String username/*Long id*/, @RequestBody UserPatchDTO patchDTO) {
 
-		return ResponseEntity.ok(userService.updateUser(idempotencyKey, id, patchDTO));
+		return ResponseEntity.ok(userService.updateUser(idempotencyKey, username, patchDTO));
 	}
 	
 
-	@DeleteMapping("/users/{id}/remove")
-	public ResponseEntity<?> deleteUser(@PathVariable("id") Long id) {
+	@DeleteMapping("/users/{username}/remove")
+	public ResponseEntity<?> deleteUser(/*@PathVariable("id") Long id*/@PathVariable("username") String username) {
 
-		userService.deleteUser(id);
+		userService.deleteUser(username);
 
 		return ResponseEntity.noContent().build();
 	}
 
-	@GetMapping("/users/{id}/accounts")
-	public List<String> allAccounts(@PathVariable("id") Long userId) {
+	@GetMapping("/users/{username}/accounts")
+	public List<String> allAccounts(/*Long userId, */@PathVariable("username") String username) {
 
-		return accountService.getAccounts(userId);
+		return accountService.getAccounts(username);
 	}  
 
 	@GetMapping("/users/{id}/accounts/{accountId}")
@@ -89,11 +89,11 @@ public class UserController {
 		return accountService.getAccount(accountId, userId);
 	}
 	
-	@PostMapping("users/{id}/accounts")
+	@PostMapping("users/{username}/accounts")
 	public ResponseEntity<?> newAccount(@RequestHeader("Idempotency-Key") String idempotencyKey,
-		@PathVariable("id") Long userId, @Valid @RequestBody AccountCreationDTO accountDTO) {
+		/*@PathVariable("id") Long userId*/ @PathVariable("username") String username, @Valid @RequestBody AccountCreationDTO accountDTO) {
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(idempotencyKey, userId, accountDTO));
+		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(idempotencyKey, username, accountDTO));
 	}
 
 	@PatchMapping("users/{id}/accounts/{accountId}")

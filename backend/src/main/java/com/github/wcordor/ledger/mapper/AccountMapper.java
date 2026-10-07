@@ -13,6 +13,8 @@ import com.github.wcordor.ledger.entity.Transaction;
 import com.github.wcordor.ledger.exception.UserNotFoundException;
 import com.github.wcordor.ledger.repository.UserRepository;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @Component
 public class AccountMapper {
 
@@ -32,7 +34,8 @@ public class AccountMapper {
             .map(Transaction::getAmountAndCurrency).toList();
         
         Long userId = account.getUserId();
-        LedgerUser user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        LedgerUser user = userRepository.findById(userId)
+            .orElseThrow(() -> new EntityNotFoundException("Could not find user " + userId + "."));
 
         String owner = user.getName();
         Long id = account.getId();
@@ -43,7 +46,8 @@ public class AccountMapper {
     public Account toAccount(AccountCreationDTO accountDTO) {
 
         Long userId = accountDTO.userId();
-        LedgerUser user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        LedgerUser user = userRepository.findById(userId)
+            .orElseThrow(() -> new EntityNotFoundException("Could not find user " + userId + "."));
 
         return new Account(user, accountDTO.name(), accountDTO.initialDeposit(), accountDTO.currency());
     }

@@ -8,8 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.github.wcordor.ledger.dtos.accountDTO.*;
+import com.github.wcordor.ledger.dtos.userDTO.UserResponseDTO;
 import com.github.wcordor.ledger.entity.Account;
 import com.github.wcordor.ledger.entity.IdempotencyKey;
+import com.github.wcordor.ledger.entity.LedgerUser;
 import com.github.wcordor.ledger.exception.AccountDeletionFailureException;
 import com.github.wcordor.ledger.exception.AccountNotFoundException;
 import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
@@ -40,7 +42,7 @@ public class AccountService {
         this.userService = userService;
     }
 
-    public AccountResponseDTO createAccount(String idempotencyKey, Long userId, AccountCreationDTO accountDTO) {
+    public AccountResponseDTO createAccount(String idempotencyKey, /*Long userId*/String username, AccountCreationDTO accountDTO) {
         IdempotencyKey savedKey = idempotencyKeyRepository.findByKey(idempotencyKey).orElse(null);
 
         if (savedKey != null) {
@@ -51,9 +53,9 @@ public class AccountService {
             }
         }
 
-        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
-        if (!accountDTO.userId().equals(userId)) {
+        if (!accountDTO.userId().equals(user.getId())) {
             throw new InvalidUserIdException();
         }
 
@@ -66,14 +68,19 @@ public class AccountService {
     }
     
     @SuppressWarnings("null")
-    public List<String> getAccounts(Long userId) {
+    public List<String> getAccounts(/*Long userId, */String username) {
 
-        userService.getUser(userId);
+        LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
+        /*if (!user.id().equals(userId)) {
+            throw new InvalidUserIdException();
+        }*/
+       Long id = user.getId();
 
-        return accountRepository.findByUser_Id(userId).stream().map(Account::getInfo).toList();
+        return accountRepository.findByUser_Id(id).stream().map(Account::getInfo).toList();
     }
 
-    public AccountResponseDTO getAccount(Long accountId, Long userId) {
+    public AccountResponseDTO getAccount(Long accountName) {
+        // Implement logic to retrieve account by account name
         Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
             .orElseThrow(() -> new AccountNotFoundException(accountId, userId));
 
