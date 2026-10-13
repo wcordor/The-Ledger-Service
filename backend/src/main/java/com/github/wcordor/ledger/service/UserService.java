@@ -95,7 +95,7 @@ public class UserService implements UserDetailsService {
             repository.deleteById(id);
         }
         else {
-            throw new UserDeletionFailureException(id);
+            throw new UserDeletionFailureException();
         }
         
     }
