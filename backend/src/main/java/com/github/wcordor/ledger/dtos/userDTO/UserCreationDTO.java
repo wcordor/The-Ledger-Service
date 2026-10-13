@@ -3,6 +3,7 @@ package com.github.wcordor.ledger.dtos.userDTO;
 import com.github.wcordor.ledger.Role;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record UserCreationDTO(
 
@@ -18,7 +19,7 @@ public record UserCreationDTO(
     @NotBlank(message = "Password must not be blank.")
     String password,
 
-    @NotBlank(message = "Role must not be blank.")
+    @NotNull(message = "Role must not be blank.")
     Role role
 
 ) {}
