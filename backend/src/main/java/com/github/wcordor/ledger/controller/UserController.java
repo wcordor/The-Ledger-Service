@@ -43,7 +43,7 @@ public class UserController {
 		return userService.getAll();
 	}
 
-    @PostMapping("/users")
+    @PostMapping("/admin")
 	public ResponseEntity<?> newUser(@RequestHeader("Idempotency-Key") String idempotencyKey, @Valid @RequestBody UserCreationDTO userDTO) {
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(idempotencyKey, userDTO));
@@ -55,10 +55,10 @@ public class UserController {
 		return userService.getUser(id);
 	}
 
-	@PutMapping("/users/{id}")
-	public ResponseEntity<?> replaceUser(@PathVariable Long id, @Valid @RequestBody UserCreationDTO userDTO) {
+	@PutMapping("/admin/{username}")
+	public ResponseEntity<?> replaceUser(@PathVariable("username") String username, @Valid @RequestBody UserCreationDTO userDTO) {
 		
-		return ResponseEntity.ok(userService.replaceUser(id, userDTO));
+		return ResponseEntity.ok(userService.replaceUser(username, userDTO));
 	}
 
 	@PatchMapping("/users/{id}")
@@ -68,11 +68,10 @@ public class UserController {
 		return ResponseEntity.ok(userService.updateUser(idempotencyKey, id, patchDTO));
 	}
 	
+	@DeleteMapping("/admin/{username}")
+	public ResponseEntity<?> deleteUser(@PathVariable("username") String username) {
 
-	@DeleteMapping("/users/{id}/remove")
-	public ResponseEntity<?> deleteUser(@PathVariable("id") Long id) {
-
-		userService.deleteUser(id);
+		userService.deleteUser(username);
 
 		return ResponseEntity.noContent().build();
 	}
