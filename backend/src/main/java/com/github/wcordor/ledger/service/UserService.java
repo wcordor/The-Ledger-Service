@@ -44,8 +44,9 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public UserResponseDTO replaceUser(Long id, UserCreationDTO userDTO) {
-        LedgerUser user = repository.findWithLockingById(id).orElseThrow(() -> new UserNotFoundException(id));
+    public UserResponseDTO replaceUser(String username, UserCreationDTO userDTO) {
+        LedgerUser user = repository.findWithLockingByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User " + username + "not found"));
+
         user.setFirstName(userDTO.firstName());
         user.setLastName(userDTO.lastName());
 
@@ -79,13 +80,13 @@ public class UserService implements UserDetailsService {
         return userMapper.toDTO(user);
     }
 
-    public UserResponseDTO getUser(Long id) {
-        LedgerUser user = repository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+    public UserResponseDTO getUser(String username) {
+        LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
         return userMapper.toDTO(user);
     }
 
-    public void deleteUser(Long id) {
-        LedgerUser user = repository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+    public void deleteUser(String username) {
+        LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
         if (user.getAccounts().size() == 0) {
             repository.deleteById(id);
@@ -97,7 +98,7 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public UserResponseDTO updateUser(String idempotencyKey, Long id, UserPatchDTO userDTO) {
+    public UserResponseDTO updateUser(String idempotencyKey, String username, UserPatchDTO userDTO) {
         IdempotencyKey savedKey = idempotencyKeyRepository.findByKey(idempotencyKey).orElse(null);
 
         if (savedKey != null) {
@@ -108,7 +109,7 @@ public class UserService implements UserDetailsService {
             }
         }
 
-        LedgerUser user = repository.findWithLockingById(id).orElseThrow(() -> new UserNotFoundException(id));
+        LedgerUser user = repository.findWithLockingByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
         if (userDTO.getFirstName().isPresent()) {
             user.setFirstName(userDTO.getFirstName().get());
