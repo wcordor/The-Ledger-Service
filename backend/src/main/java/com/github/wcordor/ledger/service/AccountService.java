@@ -4,12 +4,16 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.github.wcordor.ledger.dtos.accountDTO.*;
+import com.github.wcordor.ledger.dtos.userDTO.UserResponseDTO;
 import com.github.wcordor.ledger.entity.Account;
 import com.github.wcordor.ledger.entity.IdempotencyKey;
+import com.github.wcordor.ledger.entity.LedgerUser;
 import com.github.wcordor.ledger.exception.AccountDeletionFailureException;
 import com.github.wcordor.ledger.exception.AccountNotFoundException;
 import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
@@ -40,7 +44,7 @@ public class AccountService {
         this.userService = userService;
     }
 
-    public AccountResponseDTO createAccount(String idempotencyKey, Long userId, AccountCreationDTO accountDTO) {
+    public AccountResponseDTO createAccount(String idempotencyKey, /*Long userId*/String username, AccountCreationDTO accountDTO) {
         IdempotencyKey savedKey = idempotencyKeyRepository.findByKey(idempotencyKey).orElse(null);
 
         if (savedKey != null) {
@@ -51,9 +55,9 @@ public class AccountService {
             }
         }
 
-        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
-        if (!accountDTO.userId().equals(userId)) {
+        if (!accountDTO.userId().equals(user.getId())) {
             throw new InvalidUserIdException();
         }
 
@@ -66,16 +70,23 @@ public class AccountService {
     }
     
     @SuppressWarnings("null")
-    public List<String> getAccounts(Long userId) {
+    //@PreAuthorize("#username == authentication.name"/* or hasRole('ADMIN')*/)
+    public List<String> getAccounts(/*Long userId, */String username) {
 
-        userService.getUser(userId);
+        LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
+        /*if (!user.id().equals(userId)) {
+            throw new InvalidUserIdException();
+        }*/
+        Long id = user.getId();
 
-        return accountRepository.findByUser_Id(userId).stream().map(Account::getInfo).toList();
+        return accountRepository.findByUser_Id(id).stream().map(Account::getInfo).toList();
     }
 
-    public AccountResponseDTO getAccount(Long accountId, Long userId) {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
-            .orElseThrow(() -> new AccountNotFoundException(accountId, userId));
+    //@PostAuthorize("returnObject.owner == authentication.name or hasRole('ADMIN')")
+    public AccountResponseDTO getAccount(/*Long accountName*/Long accountId/*, Long userId*/) {
+        // Implement logic to retrieve account by account name
+        Account account = accountRepository.findById(accountId/*, userId*/)
+            .orElseThrow(() -> new AccountNotFoundException(accountId/*, userId*/));
 
         return accountMapper.toDTO(account);
     }
@@ -93,7 +104,7 @@ public class AccountService {
         }
 
         Account account = accountRepository.findWithLockingByIdAndUser_Id(accountId, userId)
-            .orElseThrow(() -> new AccountNotFoundException(accountId, userId));
+            .orElseThrow(() -> new AccountNotFoundException(accountId/*, userId*/));
 
         if (accountDTO.getName().isPresent()) {
             account.setName(accountDTO.getName().get());
@@ -108,10 +119,10 @@ public class AccountService {
         
         return accountMapper.toDTO(account);        
     }
-
+    
     public void deleteAccount(Long accountId, Long userId) {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
-            .orElseThrow(() -> new AccountNotFoundException(accountId, userId));
+        Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(accountId/*, userId*/));
             
         if (account.getUserId() == userId && account.getBalance().compareTo(new BigDecimal("0.00")) == 0) {
             accountRepository.deleteById(accountId);

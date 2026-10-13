@@ -28,6 +28,10 @@ public interface UserRepository extends JpaRepository<LedgerUser, Long> {
     @Query("SELECT u FROM LedgerUser u WHERE u.id = :id")
     Optional<LedgerUser> findWithLockingById(Long id);
 
-    Optional<LedgerUser> findByUsername(String username);
+    @EntityGraph(attributePaths = {"accounts"})
+    @Query("SELECT u FROM LedgerUser u WHERE u.username = :username")
+    Optional<LedgerUser> findByUsername(@Param("username") String username);
+    
+    Optional<LedgerUser> findWithLockingByUsername(String username);
 }
      

@@ -20,7 +20,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Account> findWithLockingById(Long id);
 
-    List<Account> findByName(String name);
+    //List<Account> findByName(String name);
     List<Account> findByUserLastName(String lastName);
     List<Account> findByCurrency(String currency);
 
@@ -30,9 +30,13 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     
     List<Account> findByUser_Id(Long id);
     
-    @EntityGraph(attributePaths = {"sent", "received"})
+    /*@EntityGraph(attributePaths = {"sent", "received"})
     @Query("SELECT a FROM Account a WHERE a.id = :id AND a.user.id = :userId")
-    Optional<Account> findByIdAndUser_Id(@Param("id") Long accountId, @Param("userId") Long userId);
+    Optional<Account> findByIdAndUser_Id(@Param("id") Long accountId, @Param("userId") Long userId);*/
+
+    @EntityGraph(attributePaths = {"sent", "received"})
+    @Query("SELECT a FROM Account a WHERE a.name = :name")
+    Optional<Account> findByName(@Param("name") String name);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @EntityGraph(attributePaths = {"sent", "received"})

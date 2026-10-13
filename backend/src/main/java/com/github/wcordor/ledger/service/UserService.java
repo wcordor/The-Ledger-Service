@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
 import com.github.wcordor.ledger.exception.NullPatchFieldException;
 import com.github.wcordor.ledger.exception.UserDeletionFailureException;
 import com.github.wcordor.ledger.exception.UserNotFoundException;
+import com.github.wcordor.ledger.exception.UsernameAlreadyExistsException;
 import com.github.wcordor.ledger.mapper.UserMapper;
 import com.github.wcordor.ledger.repository.IdempotencyKeyRepository;
 import com.github.wcordor.ledger.repository.UserRepository;
@@ -28,19 +30,23 @@ public class UserService implements UserDetailsService {
     private final UserRepository repository;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final UserMapper userMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository repository, IdempotencyKeyRepository idempotencyKeyRepository, UserMapper userMapper) {
+    public UserService(UserRepository repository, IdempotencyKeyRepository idempotencyKeyRepository,
+        UserMapper userMapper, BCryptPasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User " + username + "not found"));
+        String password = passwordEncoder.encode(user.getPassword());
 
-        return User.builder().username(username).password(user.getPassword()).roles(user.getRole().name()).build();
+        return User.builder().username(username).password(password).roles(user.getRole().name()).build();
     }
 
     @Transactional
@@ -56,7 +62,7 @@ public class UserService implements UserDetailsService {
         @SuppressWarnings("null")
         List<String> accounts = user.getAccounts().stream().map(Account::getName).toList();
         
-        return new UserResponseDTO(user.getFirstName(), user.getLastName(), user.getUsername(), accounts, id);
+        return new UserResponseDTO(user.getFirstName(), user.getLastName(), user.getUsername(), accounts, user.getId());
     }
 
     @SuppressWarnings("null")
@@ -73,6 +79,13 @@ public class UserService implements UserDetailsService {
             } else {
                 throw new IdempotencyKeyAlreadyExistsException();
             }
+        }
+
+        String username = userDTO.username();
+        LedgerUser sameName = repository.findByUsername(username).orElse(null);
+
+        if (sameName != null) {
+            throw new UsernameAlreadyExistsException(username);
         }
 
         LedgerUser user = repository.save(userMapper.toUser(userDTO));
@@ -92,7 +105,7 @@ public class UserService implements UserDetailsService {
         LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
         if (user.getAccounts().size() == 0) {
-            repository.deleteById(id);
+            repository.deleteById(user.getId());
         }
         else {
             throw new UserDeletionFailureException();
@@ -129,6 +142,22 @@ public class UserService implements UserDetailsService {
                 throw new NullPatchFieldException();
             };
         }
+
+        /*if (userDTO.getUsername().isPresent()) {
+            user.setUsername(userDTO.getUsername().get());
+
+            if (userDTO.getUsername().get() == null || userDTO.getUsername().get().isBlank()) {
+                throw new NullPatchFieldException();
+            };
+        }
+
+        if (userDTO.getPassword().isPresent()) {
+            user.setPassword(userDTO.getPassword().get());
+
+            if (userDTO.getPassword().get() == null || userDTO.getPassword().get().isBlank()) {
+                throw new NullPatchFieldException();
+            };
+        }*/
 
         IdempotencyKey newKey = new IdempotencyKey(idempotencyKey, LocalDateTime.now().plusHours(24));
         idempotencyKeyRepository.save(newKey);

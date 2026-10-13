@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.github.wcordor.ledger.dtos.userDTO.UserResponseDTO;
+import com.github.wcordor.ledger.Role;
 import com.github.wcordor.ledger.dtos.userDTO.UserCreationDTO;
 import com.github.wcordor.ledger.entity.Account;
 import com.github.wcordor.ledger.entity.LedgerUser;
@@ -27,10 +28,7 @@ public class UserMapper {
     }
 
     public LedgerUser toUser(UserCreationDTO userDTO) {
-        LedgerUser user = new LedgerUser(userDTO.firstName(), userDTO.lastName(), userDTO.username(), userDTO.password(), userDTO.role());
-        
-        user.setFirstName(userDTO.firstName());
-        user.setLastName(userDTO.lastName());
-        return user;
+
+        return new LedgerUser(userDTO.firstName(), userDTO.lastName(), userDTO.username(), userDTO.password(), userDTO.role());
     }
 }

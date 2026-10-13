@@ -35,54 +35,58 @@ public class Demo {
 		return (args) -> {
 
 			UserResponseDTO userDTO1 = requestFactory.createDemoUser("John", "Smith", "jsmith",
-				"$2a$12$OcPK4aV9I39qU9IJTkbhZukUdA4N1O7CXV0YC75bKON/KiYWpNXQC", Role.USER); // password: 1
+				"1", Role.USER); // password: 1
 
 			Long user1_id = userDTO1.id();
+			String username = userDTO1.username();
 
-			AccountResponseDTO accountDTO1 = requestFactory.createDemoAccount(user1_id,
+			AccountResponseDTO accountDTO1 = requestFactory.createDemoAccount(username,
 				"Savings", new BigDecimal("5000.00"), "GBP");
 
-			AccountResponseDTO accountDTO2 = requestFactory.createDemoAccount(user1_id,
+			AccountResponseDTO accountDTO2 = requestFactory.createDemoAccount(username,
 				"Checking", new BigDecimal("1000.00"), "GBP");
 
 			UserResponseDTO userDTO2 = requestFactory.createDemoUser("Bernard", "Jones", "bjones",
-				"$2a$12$fip3pRbbenWjFqjv1nhfHu4INrG83eN.bLyvQUADCKRXbqdXGzGS.", Role.USER); // password: 2
+				"2", Role.USER); // password: 2
 
 			Long user2_id = userDTO2.id();
+			String username2 = userDTO2.username();
 
-			AccountResponseDTO accountDTO3 = requestFactory.createDemoAccount(user2_id,
+			AccountResponseDTO accountDTO3 = requestFactory.createDemoAccount(username2,
 				"Investment", new BigDecimal("15000.00"), "USD");
 
-			AccountResponseDTO accountDTO4 = requestFactory.createDemoAccount(user2_id, 
+			AccountResponseDTO accountDTO4 = requestFactory.createDemoAccount(username2, 
 				"Savings", new BigDecimal("7000.00"), "USD");
 
-			AccountResponseDTO accountDTO5 = requestFactory.createDemoAccount(user2_id,
+			AccountResponseDTO accountDTO5 = requestFactory.createDemoAccount(username2,
 				"Checking", new BigDecimal("3000.00"), "USD");
 
 			UserResponseDTO userDTO3 = requestFactory.createDemoUser("Deborah", "Adams", "dadams",
-				"$2a$12$SJ1QAz30MHb5YlYJtYNfzeLrZwFP9zy0IBrZ9NBhw5QKO.yNZvGgi", Role.USER); // password: 3
+				"3", Role.USER); // password: 3
 
 			Long user3_id = userDTO3.id();
+			String username3 = userDTO3.username();
 
-			AccountResponseDTO accountDTO6 = requestFactory.createDemoAccount(user3_id,
+			AccountResponseDTO accountDTO6 = requestFactory.createDemoAccount(username3,
 				"Savings", new BigDecimal("3000.00"), "USD");
 
-			AccountResponseDTO accountDTO7 = requestFactory.createDemoAccount(user3_id,
+			AccountResponseDTO accountDTO7 = requestFactory.createDemoAccount(username3,
 				"Checking", new BigDecimal("1000.00"), "USD");
 
 			UserResponseDTO userDTO4 = requestFactory.createDemoUser("Mary", "Johnson", "mjohnson",
-				"$2a$12$0n/kVnACkkrKzYIfYM0wN.a5iErdHAOmi4S51Wg.HxG5v4.PqVyi2", Role.USER); // password: 4
+				"4", Role.USER); // password: 4
 
 			Long user4_id = userDTO4.id();
+			String username4 = userDTO4.username();
 
-			AccountResponseDTO accountDTO8 = requestFactory.createDemoAccount(user4_id,
+			AccountResponseDTO accountDTO8 = requestFactory.createDemoAccount(username4,
 				"Savings", new BigDecimal("5500.00"), "USD");
 
-			AccountResponseDTO accountDTO9 = requestFactory.createDemoAccount(user4_id,
+			AccountResponseDTO accountDTO9 = requestFactory.createDemoAccount(username4,
 				"Checking", new BigDecimal("1500.00"), "USD");
 
 			UserResponseDTO admin = requestFactory.createDemoUser("Admin", "User", "admin",
-				"$2a$12$Bvn4neIXr3Sf68k7zLfMAO6844POfyDVwhcf4fdRgPd9qpAI/P6Ju", Role.ADMIN); // password: 99
+				"99", Role.ADMIN); // password: 99
 
 			logger.info("");
 			logger.info("List of Preloaded Users:");
@@ -116,8 +120,8 @@ public class Demo {
 			Long account5_id = accountDTO5.id();
 			Long account7_id = accountDTO7.id();
 
-			accountDTO5 = accountService.getAccount(account5_id, user2_id);
-			accountDTO7 = accountService.getAccount(account7_id, user3_id);
+			accountDTO5 = accountService.getAccount(account5_id/*, user2_id*/);
+			accountDTO7 = accountService.getAccount(account7_id/*, user3_id*/);
 			BigDecimal account5_bal = accountDTO5.balance();
 			BigDecimal account7_bal = accountDTO7.balance();
 			String account5_currency = accountDTO5.currency();
@@ -131,8 +135,8 @@ public class Demo {
 			TransactionResponseDTO transactionDTO = requestFactory.demoMoneyTransfer(user2_id,
 				account5_id, account7_id, new BigDecimal("500.00"), "USD");
 
-			accountDTO5 = accountService.getAccount(account5_id, user2_id);
-			accountDTO7 = accountService.getAccount(account7_id, user3_id);
+			accountDTO5 = accountService.getAccount(account5_id/*, user2_id*/);
+			accountDTO7 = accountService.getAccount(account7_id/*, user3_id*/);
 			account5_bal = accountDTO5.balance();
 			account7_bal = accountDTO7.balance();
 
@@ -164,8 +168,8 @@ public class Demo {
 				logger.info("");
 			}
 
-			accountDTO5 = accountService.getAccount(account5_id, user2_id);
-			accountDTO7 = accountService.getAccount(account7_id, user3_id);
+			accountDTO5 = accountService.getAccount(account5_id/*, user2_id*/);
+			accountDTO7 = accountService.getAccount(account7_id/*, user3_id*/);
 			BigDecimal account5_bal_rolledBack = accountDTO5.balance();
 			BigDecimal account7_bal_rolledBack = accountDTO7.balance();
 
@@ -181,7 +185,7 @@ public class Demo {
 			}
 
 			Long account9_id = accountDTO9.id();
-			accountDTO9 = accountService.getAccount(account9_id, user4_id);
+			accountDTO9 = accountService.getAccount(account9_id/*, user4_id*/);
 			BigDecimal account9_bal = accountDTO9.balance();
 			String account9_currency = accountDTO9.currency();
 			
@@ -225,9 +229,9 @@ public class Demo {
 			CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 			accountRepository.flush();
 
-			accountDTO5 = accountService.getAccount(account5_id, user2_id);
-			accountDTO7 = accountService.getAccount(account7_id, user3_id);
-			accountDTO9 = accountService.getAccount(account9_id, user4_id);
+			accountDTO5 = accountService.getAccount(account5_id/*, user2_id*/);
+			accountDTO7 = accountService.getAccount(account7_id/*, user3_id*/);
+			accountDTO9 = accountService.getAccount(account9_id/*, user4_id*/);
 
 			account9_bal = accountDTO9.balance();
 			account5_bal = accountDTO5.balance();

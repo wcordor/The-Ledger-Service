@@ -82,20 +82,20 @@ public class UserController {
 		return accountService.getAccounts(username);
 	}  
 
-	@GetMapping("/users/{id}/accounts/{accountId}")
-	public AccountResponseDTO oneAccount(@PathVariable("id") Long userId, @PathVariable("accountId") Long accountId) {
+	/*@GetMapping(/*"/users/{id}*//*"/accounts/{id}")
+	public AccountResponseDTO oneAccount(@PathVariable("id") Long accountId/*, @PathVariable("accountName") String accountName*//*) {
 
-		return accountService.getAccount(accountId, userId);
-	}
+		return accountService.getAccount(accountId/*, userId*//*);
+	}*/
 	
-	@PostMapping("users/{id}/accounts")
+	@PostMapping("users/{username}/accounts")
 	public ResponseEntity<?> newAccount(@RequestHeader("Idempotency-Key") String idempotencyKey,
-		@PathVariable("id") Long userId, @Valid @RequestBody AccountCreationDTO accountDTO) {
+		/*@PathVariable("id") Long userId*/ @PathVariable("username") String username, @Valid @RequestBody AccountCreationDTO accountDTO) {
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(idempotencyKey, userId, accountDTO));
+		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(idempotencyKey, username, accountDTO));
 	}
 
-	@PatchMapping("users/{id}/accounts/{accountId}")
+	@PatchMapping("users/{username}/accounts/{accountId}")
 	public ResponseEntity<?> changeAccountName(@RequestHeader("Idempotency-Key") String idempotencyKey,
 		@PathVariable("id") Long userId, @PathVariable("accountId") Long accountId, @RequestBody AccountPatchDTO patchDTO) {
 

@@ -66,7 +66,7 @@ public class TransactionService {
         }
         
         Account sender = accountRepository.findWithLockingByIdAndUser_Id(senderId, sender_userId)
-        .orElseThrow(() -> new AccountNotFoundException(senderId, sender_userId));
+        .orElseThrow(() -> new AccountNotFoundException(senderId/*, sender_userId*/));
 
         Long receiverId = transactionDTO.receiverId();
 
@@ -96,14 +96,14 @@ public class TransactionService {
 
     @SuppressWarnings("null")
     public List<String> getTransactions(Long accountId, Long userId) {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
-            .orElseThrow(() -> new AccountNotFoundException(accountId, userId));
+        Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(accountId/*, userId*/));
         
         return account.getTransactions().stream().map(Transaction::getAmountAndCurrency).toList();
     }
 
     public TransactionResponseDTO getTransaction(Long transactionId, Long accountId, Long userId) {
-        accountService.getAccount(accountId, userId);
+        accountService.getAccount(accountId/*, userId*/);
 
         Transaction transaction = transactionRepository.findById(transactionId)
             .orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));
