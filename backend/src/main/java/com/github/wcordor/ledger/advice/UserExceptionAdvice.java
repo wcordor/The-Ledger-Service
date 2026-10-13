@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.github.wcordor.ledger.exception.InvalidUserIdException;
 import com.github.wcordor.ledger.exception.UserDeletionFailureException;
 import com.github.wcordor.ledger.exception.UserNotFoundException;
+import com.github.wcordor.ledger.exception.UsernameAlreadyExistsException;
 
 @RestControllerAdvice
 public class UserExceptionAdvice {
@@ -27,6 +28,12 @@ public class UserExceptionAdvice {
 	@ExceptionHandler(InvalidUserIdException.class)
 	@ResponseStatus(HttpStatus.CONFLICT)
 	public String InvalidUserIdHandler(InvalidUserIdException e) {
+		return e.getMessage();
+	}
+
+	@ExceptionHandler(UsernameAlreadyExistsException.class)
+	@ResponseStatus(HttpStatus.CONFLICT)
+	public String UsernameAlreadyExistsHandler(UsernameAlreadyExistsException e) {
 		return e.getMessage();
 	}
 
