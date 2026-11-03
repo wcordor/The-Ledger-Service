@@ -35,7 +35,7 @@ public class Demo {
 		return (args) -> {
 
 			UserResponseDTO userDTO1 = requestFactory.createDemoUser("John", "Smith", "jsmith",
-				"1", Role.USER); // password: 1
+				"1", Role.USER);
 
 			Long user1_id = userDTO1.id();
 			String username = userDTO1.username();
@@ -47,7 +47,7 @@ public class Demo {
 				"Checking", new BigDecimal("1000.00"), "GBP");
 
 			UserResponseDTO userDTO2 = requestFactory.createDemoUser("Bernard", "Jones", "bjones",
-				"2", Role.USER); // password: 2
+				"2", Role.USER);
 
 			Long user2_id = userDTO2.id();
 			String username2 = userDTO2.username();
@@ -62,7 +62,7 @@ public class Demo {
 				"Checking", new BigDecimal("3000.00"), "USD");
 
 			UserResponseDTO userDTO3 = requestFactory.createDemoUser("Deborah", "Adams", "dadams",
-				"3", Role.USER); // password: 3
+				"3", Role.USER);
 
 			Long user3_id = userDTO3.id();
 			String username3 = userDTO3.username();
@@ -74,7 +74,7 @@ public class Demo {
 				"Checking", new BigDecimal("1000.00"), "USD");
 
 			UserResponseDTO userDTO4 = requestFactory.createDemoUser("Mary", "Johnson", "mjohnson",
-				"4", Role.USER); // password: 4
+				"4", Role.USER);
 
 			Long user4_id = userDTO4.id();
 			String username4 = userDTO4.username();
@@ -86,7 +86,7 @@ public class Demo {
 				"Checking", new BigDecimal("1500.00"), "USD");
 
 			UserResponseDTO admin = requestFactory.createDemoUser("Admin", "User", "admin",
-				"99", Role.ADMIN); // password: 99
+				"99", Role.ADMIN);
 
 			logger.info("");
 			logger.info("List of Preloaded Users:");
