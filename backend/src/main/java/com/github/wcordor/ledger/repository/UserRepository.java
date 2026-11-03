@@ -20,8 +20,8 @@ public interface UserRepository extends JpaRepository<LedgerUser, Long> {
     List<LedgerUser> findByLastName(String lastName);
 
     @EntityGraph(attributePaths = {"accounts"})
-    @Query("SELECT u FROM LedgerUser u WHERE u.id = :id")
-    Optional<LedgerUser> findById(@Param("id") Long id);
+    @Query("SELECT u FROM LedgerUser u WHERE u.username = :username")
+    Optional<LedgerUser> findByUsername(@Param("username") String username);
     
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @EntityGraph(attributePaths = {"accounts"})

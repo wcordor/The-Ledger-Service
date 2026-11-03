@@ -75,6 +75,13 @@ public class UserService implements UserDetailsService {
             }
         }
 
+        String username = userDTO.username();
+        LedgerUser sameName = repository.findByUsername(username).orElse(null);
+
+        if (sameName != null) {
+            throw new UsernameAlreadyExistsException(username);
+        }
+
         LedgerUser user = repository.save(userMapper.toUser(userDTO));
 
         IdempotencyKey newKey = new IdempotencyKey(idempotencyKey, LocalDateTime.now().plusHours(24));
