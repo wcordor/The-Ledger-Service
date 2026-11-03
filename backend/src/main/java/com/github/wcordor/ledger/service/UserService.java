@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,17 +29,21 @@ public class UserService implements UserDetailsService {
     private final UserRepository repository;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final UserMapper userMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository repository, IdempotencyKeyRepository idempotencyKeyRepository, UserMapper userMapper) {
+    public UserService(UserRepository repository, IdempotencyKeyRepository idempotencyKeyRepository,
+        UserMapper userMapper, BCryptPasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User " + username + "not found"));
+        String password = passwordEncoder.encode(user.getPassword());
 
         return User.builder().username(username).password(user.getPassword()).roles(user.getRole().name()).build();
     }
