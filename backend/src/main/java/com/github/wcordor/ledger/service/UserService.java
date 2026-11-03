@@ -46,7 +46,7 @@ public class UserService implements UserDetailsService {
         LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User " + username + "not found"));
         String password = passwordEncoder.encode(user.getPassword());
 
-        return User.builder().username(username).password(user.getPassword()).roles(user.getRole().name()).build();
+        return User.builder().username(username).password(password).roles(user.getRole().name()).build();
     }
 
     @Transactional
