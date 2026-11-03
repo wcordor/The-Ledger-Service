@@ -35,7 +35,7 @@ public class AccountMapper {
         LedgerUser user = userRepository.findById(userId)
             .orElseThrow(() -> new EntityNotFoundException("Could not find user " + userId + "."));
 
-        String owner = user.getName();
+        String owner = user.getUsername();
         Long id = account.getId();
 
         return new AccountResponseDTO(name, balance, currency, owner, transactions, id);
