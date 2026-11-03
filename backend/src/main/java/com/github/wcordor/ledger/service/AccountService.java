@@ -51,7 +51,7 @@ public class AccountService {
             }
         }
 
-        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
         if (!accountDTO.userId().equals(userId)) {
             throw new InvalidUserIdException();

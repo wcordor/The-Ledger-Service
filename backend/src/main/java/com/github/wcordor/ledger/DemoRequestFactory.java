@@ -57,7 +57,7 @@ public class DemoRequestFactory {
 
     public LedgerUser getDemoUser(Long id) {
         
-        return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        return userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
     }
 
     public Account getDemoAccount(Long accountId, Long userId) {
