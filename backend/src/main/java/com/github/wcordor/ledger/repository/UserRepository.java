@@ -25,9 +25,7 @@ public interface UserRepository extends JpaRepository<LedgerUser, Long> {
     
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @EntityGraph(attributePaths = {"accounts"})
-    @Query("SELECT u FROM LedgerUser u WHERE u.id = :id")
-    Optional<LedgerUser> findWithLockingById(Long id);
-
-    Optional<LedgerUser> findByUsername(String username);
+    @Query("SELECT u FROM LedgerUser u WHERE u.username = :username")
+    Optional<LedgerUser> findWithLockingByUsername(String username);
 }
      
