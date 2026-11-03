@@ -38,6 +38,7 @@ public class Demo {
 				"1", Role.USER); // password: 1
 
 			Long user1_id = userDTO1.id();
+			String username = userDTO1.username();
 
 			AccountResponseDTO accountDTO1 = requestFactory.createDemoAccount(user1_id,
 				"Savings", new BigDecimal("5000.00"), "GBP");
@@ -49,6 +50,7 @@ public class Demo {
 				"2", Role.USER); // password: 2
 
 			Long user2_id = userDTO2.id();
+			String username2 = userDTO2.username();
 
 			AccountResponseDTO accountDTO3 = requestFactory.createDemoAccount(user2_id,
 				"Investment", new BigDecimal("15000.00"), "USD");
@@ -63,6 +65,7 @@ public class Demo {
 				"3", Role.USER); // password: 3
 
 			Long user3_id = userDTO3.id();
+			String username3 = userDTO3.username();
 
 			AccountResponseDTO accountDTO6 = requestFactory.createDemoAccount(user3_id,
 				"Savings", new BigDecimal("3000.00"), "USD");
@@ -74,6 +77,7 @@ public class Demo {
 				"4", Role.USER); // password: 4
 
 			Long user4_id = userDTO4.id();
+			String username4 = userDTO4.username();
 
 			AccountResponseDTO accountDTO8 = requestFactory.createDemoAccount(user4_id,
 				"Savings", new BigDecimal("5500.00"), "USD");
