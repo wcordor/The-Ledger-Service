@@ -62,7 +62,7 @@ public class UserService implements UserDetailsService {
         @SuppressWarnings("null")
         List<String> accounts = user.getAccounts().stream().map(Account::getName).toList();
         
-        return new UserResponseDTO(user.getFirstName(), user.getLastName(), user.getUsername(), accounts, id);
+        return new UserResponseDTO(user.getFirstName(), user.getLastName(), user.getUsername(), accounts, user.getId());
     }
 
     @SuppressWarnings("null")
@@ -105,7 +105,7 @@ public class UserService implements UserDetailsService {
         LedgerUser user = repository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
         if (user.getAccounts().size() == 0) {
-            repository.deleteById(id);
+            repository.deleteById(user.getId());
         }
         else {
             throw new UserDeletionFailureException();
