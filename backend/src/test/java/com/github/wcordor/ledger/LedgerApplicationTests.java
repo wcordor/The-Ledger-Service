@@ -119,8 +119,8 @@ class LedgerApplicationTests {
 
         account = requestFactory.getDemoAccount(account_id, user_id);
         account2 = requestFactory.getDemoAccount(account2_id, user2_id);
-        user = requestFactory.getDemoUser(user_id);
-        user2 = requestFactory.getDemoUser(user2_id);
+        user = requestFactory.getDemoUser(username);
+        user2 = requestFactory.getDemoUser(username2);
 
 	}
 
@@ -274,7 +274,7 @@ class LedgerApplicationTests {
 
 		AccountResponseDTO account3DTO = requestFactory.createDemoAccount(user_id, "Account III", new BigDecimal("5000.00"), "USD");
 		Account account3 = requestFactory.getDemoAccount(account3DTO.id(), user_id);
-		user = requestFactory.getDemoUser(user_id);
+		user = requestFactory.getDemoUser(username);
 		userAccs = user.getAccounts();
 
 		assertTrue(2 == userAccs.size());

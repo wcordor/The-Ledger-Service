@@ -57,8 +57,7 @@ public class DemoRequestFactory {
         );    
     }
 
-    public LedgerUser getDemoUser(Long id) {
-        
+    public LedgerUser getDemoUser(String username) {
         return userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
     }
 
