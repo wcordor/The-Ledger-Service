@@ -19,6 +19,7 @@ import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
 import com.github.wcordor.ledger.exception.NullPatchFieldException;
 import com.github.wcordor.ledger.exception.UserDeletionFailureException;
 import com.github.wcordor.ledger.exception.UserNotFoundException;
+import com.github.wcordor.ledger.exception.UsernameAlreadyExistsException;
 import com.github.wcordor.ledger.mapper.UserMapper;
 import com.github.wcordor.ledger.repository.IdempotencyKeyRepository;
 import com.github.wcordor.ledger.repository.UserRepository;
