@@ -66,11 +66,12 @@ public class AccountService {
     }
     
     @SuppressWarnings("null")
-    public List<String> getAccounts(Long userId) {
+    public List<String> getAccounts(String username) {
 
-        userService.getUser(userId);
+        LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
+        Long id = user.getId();
 
-        return accountRepository.findByUser_Id(userId).stream().map(Account::getInfo).toList();
+        return accountRepository.findByUser_Id(id).stream().map(Account::getInfo).toList();
     }
 
     public AccountResponseDTO getAccount(Long accountId, Long userId) {

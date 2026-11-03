@@ -258,13 +258,13 @@ class LedgerControllerTests {
     void testAccountGetRequest_All() {
 
         List<String> mockAccounts = new ArrayList<>(List.of("Mock Account 1", "Mock Account 2"));
-        when(accountService.getAccounts(4L)).thenReturn(mockAccounts);
+        when(accountService.getAccounts("user")).thenReturn(mockAccounts);
 
         restTestClient.get().uri("/users/4/accounts").exchange().expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("$[0]")
             .isEqualTo("Mock Account 1").jsonPath("$[1]").isEqualTo("Mock Account 2");
 
-        when(accountService.getAccounts(42L)).thenThrow(new UserNotFoundException(42L));
+        when(accountService.getAccounts("not_found")).thenThrow(new UserNotFoundException("not_found"));
 
         restTestClient.get().uri("/users/42/accounts").exchange().expectStatus().isNotFound()
             .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
