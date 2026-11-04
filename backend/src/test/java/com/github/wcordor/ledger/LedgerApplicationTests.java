@@ -675,7 +675,7 @@ class LedgerApplicationTests {
 	
 		String idempotencyKey = UUID.randomUUID().toString();
 
-		UserCreationDTO userCreationDTO = new UserCreationDTO("Idempotent", "User", "owner2", "i", Role.USER);
+		UserCreationDTO userCreationDTO = new UserCreationDTO("Idempotent", "User", "owner3", "i", Role.USER);
 		userService.createUser(idempotencyKey, userCreationDTO);
 
 		assertThrows(IdempotencyKeyAlreadyExistsException.class, () -> {
