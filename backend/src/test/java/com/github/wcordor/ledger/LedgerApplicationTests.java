@@ -87,9 +87,11 @@ class LedgerApplicationTests {
     private UserResponseDTO userDTO;
     private LedgerUser user;
     private Long user_id;
+	private String username;
     private UserResponseDTO userDTO2;
     private LedgerUser user2;
     private Long user2_id;
+	private String username2;
 
 	@BeforeEach
 	void setUp() {
@@ -101,21 +103,21 @@ class LedgerApplicationTests {
 
         userDTO = requestFactory.createDemoUser("Account", "Owner I", "owner1", "p", Role.USER);
         user_id = userDTO.id();
+		username = userDTO.username();
 
-        accountDTO = requestFactory.createDemoAccount(user_id, "Account I",
-            new BigDecimal("1000.00"), "USD");
-
+        accountDTO = requestFactory.createDemoAccount(username, "Account I", new BigDecimal("1000.00"), "USD");
         account_id = accountDTO.id();
 
-        userDTO = userService.getUser(user_id);
+        userDTO = userService.getUser(username);
        
         userDTO2 = requestFactory.createDemoUser("Account", "Owner II","owner2", "a", Role.USER);
         user2_id = userDTO2.id();
+		username2 = userDTO2.username();
 
-        accountDTO2 = requestFactory.createDemoAccount(user2_id, "Account II", new BigDecimal("200.00"), "USD");
+        accountDTO2 = requestFactory.createDemoAccount(username2, "Account II", new BigDecimal("200.00"), "USD");
         account2_id = accountDTO2.id();
 
-        userDTO2 = userService.getUser(user2_id);
+        userDTO2 = userService.getUser(username);
 
         account = requestFactory.getDemoAccount(account_id, user_id);
         account2 = requestFactory.getDemoAccount(account2_id, user2_id);
@@ -194,12 +196,12 @@ class LedgerApplicationTests {
 		AccountCreationDTO creationDTO = new AccountCreationDTO("Account III", new BigDecimal("300.00"),
 			"USD", user_id);
 			
-		AccountResponseDTO accountDTO3 = accountService.createAccount("Key-Test", user_id, creationDTO);
+		AccountResponseDTO accountDTO3 = accountService.createAccount("Key-Test", username, creationDTO);
 
 		Long account3_id = accountDTO3.id();
 		Account account3 = requestFactory.getDemoAccount(account3_id, user_id);
 
-		List<String> accountList = accountService.getAccounts(user_id);
+		List<String> accountList = accountService.getAccounts(username);
 		assertEquals(2, accountList.size());
 		assertTrue(accountList.contains(account.getInfo()) && accountList.contains(account3.getInfo()));
 
@@ -231,7 +233,7 @@ class LedgerApplicationTests {
 
 		accountService.deleteAccount(account3_id, user_id);
 
-		accountList = accountService.getAccounts(user_id);	
+		accountList = accountService.getAccounts(username);	
 		account = requestFactory.getDemoAccount(account_id, user_id);
 
 		assertTrue(accountList.size() == 1 && accountList.contains(account.getInfo()));
@@ -242,7 +244,7 @@ class LedgerApplicationTests {
 
 		AccountCreationDTO mismatch = new AccountCreationDTO("user_id mismatch", new BigDecimal("0.00"), "USD", user_id);
 		assertThrows(InvalidUserIdException.class, () -> {
-			accountService.createAccount(UUID.randomUUID().toString(), user2_id, mismatch);
+			accountService.createAccount(UUID.randomUUID().toString(), username2, mismatch);
 		});
 
 		assertThrows(UserNotFoundException.class, () -> {
@@ -272,7 +274,7 @@ class LedgerApplicationTests {
 
 		assertFalse(2 == userAccs.size() && userAccs.contains(account2));
 
-		AccountResponseDTO account3DTO = requestFactory.createDemoAccount(user_id, "Account III", new BigDecimal("5000.00"), "USD");
+		AccountResponseDTO account3DTO = requestFactory.createDemoAccount(username, "Account III", new BigDecimal("5000.00"), "USD");
 		Account account3 = requestFactory.getDemoAccount(account3DTO.id(), user_id);
 		user = requestFactory.getDemoUser(username);
 		userAccs = user.getAccounts();
@@ -307,8 +309,8 @@ class LedgerApplicationTests {
 	@Test
 	void testUserServiceFunctions() {
 
-		UserCreationDTO creationDTO = new UserCreationDTO("Owner", "of Account I","owner2", "t", Role.USER);
-		userDTO = userService.replaceUser(user_id, creationDTO);
+		UserCreationDTO creationDTO = new UserCreationDTO("Owner", "of Account I","replace", "t", Role.USER);
+		userDTO = userService.replaceUser(username, creationDTO);
 		assertEquals("Owner", userDTO.firstName());
 		assertEquals("of Account I", userDTO.lastName());
 		assertThrows(UserDeletionFailureException.class, () -> {
@@ -486,7 +488,7 @@ class LedgerApplicationTests {
 			transactionService.getTransaction(400L, account_id, user_id); 
 		});
 
-		AccountResponseDTO accountDTO3 = requestFactory.createDemoAccount(user2_id, "Account III", new BigDecimal("10.00"), "USD");
+		AccountResponseDTO accountDTO3 = requestFactory.createDemoAccount(username2, "Account III", new BigDecimal("10.00"), "USD");
 		assertThrows(TransactionNotFoundException.class, () -> {
 			transactionService.getTransaction(transactionDTO.id(), accountDTO3.id(), user2_id); 
 		});
@@ -660,12 +662,12 @@ class LedgerApplicationTests {
 
 		AccountCreationDTO accountCreationDTO = new AccountCreationDTO("Idempotent Account", new BigDecimal("100.00"), "USD", user_id);
 		assertThrows(IdempotencyKeyAlreadyExistsException.class, () -> {
-			accountService.createAccount(idempotencyKey, user_id, accountCreationDTO);
+			accountService.createAccount(idempotencyKey, username, accountCreationDTO);
 		});
 		
 		UserPatchDTO userPatchDTO = new UserPatchDTO(JsonNullable.of("Idempotent"), JsonNullable.undefined());
 		assertThrows(IdempotencyKeyAlreadyExistsException.class, () -> {
-			userService.updateUser(idempotencyKey, user_id, userPatchDTO);
+			userService.updateUser(idempotencyKey, username, userPatchDTO);
 		});
 
 		AccountPatchDTO accountPatchDTO = new AccountPatchDTO(JsonNullable.of("Idempotent Account"));
