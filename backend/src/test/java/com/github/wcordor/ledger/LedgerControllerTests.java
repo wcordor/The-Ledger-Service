@@ -46,6 +46,7 @@ import com.github.wcordor.ledger.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 
 @WebMvcTest(UserController.class)
+@Import(SecurityConfig.class)
 @AutoConfigureRestTestClient
 class LedgerControllerTests {
     
