@@ -303,6 +303,7 @@ class LedgerApplicationTests {
 		assertEquals(user_id, userDTO.id());
 		assertEquals("Account", userDTO.firstName());
 		assertEquals("Owner I", userDTO.lastName());
+		assertEquals("owner1", userDTO.username());
 		assertTrue(userDTO.accounts().contains(account.getInfo()));
 		assertEquals(1, userDTO.accounts().size());
 
