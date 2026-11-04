@@ -328,44 +328,47 @@ class LedgerApplicationTests {
 		userDTO = userService.replaceUser(username, creationDTO);
 		assertEquals("Owner", userDTO.firstName());
 		assertEquals("of Account I", userDTO.lastName());
+
+		String usernamePUT = userDTO.username();
 		assertThrows(UserDeletionFailureException.class, () -> {
-			userService.deleteUser(user_id);
+			userService.deleteUser(usernamePUT);
 		});
 
-		UserResponseDTO delete = userService.createUser(UUID.randomUUID().toString(), creationDTO);
+		UserCreationDTO deletionDTO = new UserCreationDTO("To", "Delete", "delete", "X", Role.USER);
+		UserResponseDTO delete = userService.createUser(UUID.randomUUID().toString(), deletionDTO);
 
 		List<String> userList = userService.getAll();
 		assertEquals(3, userList.size());
 
-		userService.deleteUser(delete.id());
+		userService.deleteUser(delete.username());
 
 		assertThrows(UserNotFoundException.class, () -> {
-			userService.getUser(delete.id());
+			userService.getUser(delete.username());
 		});
 
 		userList = userService.getAll();
 		assertEquals(2, userList.size());
 
 		UserPatchDTO patchDTO = new UserPatchDTO(JsonNullable.undefined(), JsonNullable.of("PATCH"));
-		userDTO = userService.updateUser(UUID.randomUUID().toString(), user_id, patchDTO);
+		userDTO = userService.updateUser(UUID.randomUUID().toString(), usernamePUT, patchDTO);
 
 		assertEquals("Owner", userDTO.firstName());
 		assertEquals("PATCH", userDTO.lastName());
 
 		UserPatchDTO patchDTO2 = new UserPatchDTO(JsonNullable.of("User"), JsonNullable.undefined());
-		userDTO = userService.updateUser(UUID.randomUUID().toString(), user_id, patchDTO2);
+		userDTO = userService.updateUser(UUID.randomUUID().toString(), usernamePUT, patchDTO2);
 
 		assertEquals("User", userDTO.firstName());
 		assertEquals("PATCH", userDTO.lastName());
 
 		UserPatchDTO nullPatch = new UserPatchDTO(JsonNullable.of(null), JsonNullable.undefined());
 		assertThrows(NullPatchFieldException.class, () -> {
-			userService.updateUser(UUID.randomUUID().toString(), user_id, nullPatch);
+			userService.updateUser(UUID.randomUUID().toString(), usernamePUT, nullPatch);
 		});
 
 		UserPatchDTO nullPatch2 = new UserPatchDTO(JsonNullable.of(" "), JsonNullable.undefined());
 		assertThrows(NullPatchFieldException.class, () -> {
-			userService.updateUser(UUID.randomUUID().toString(), user_id, nullPatch2);
+			userService.updateUser(UUID.randomUUID().toString(), usernamePUT, nullPatch2);
 		});
 
 		UserPatchDTO nullPatch3 = new UserPatchDTO(JsonNullable.undefined(), JsonNullable.of(" "));
