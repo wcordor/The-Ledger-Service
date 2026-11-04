@@ -373,7 +373,11 @@ class LedgerApplicationTests {
 
 		UserPatchDTO nullPatch3 = new UserPatchDTO(JsonNullable.undefined(), JsonNullable.of(" "));
 		assertThrows(NullPatchFieldException.class, () -> {
-			userService.updateUser(UUID.randomUUID().toString(), user_id, nullPatch3);
+			userService.updateUser(UUID.randomUUID().toString(), usernamePUT, nullPatch3);
+		});
+
+		assertThrows(UsernameAlreadyExistsException.class, () -> {
+			userService.createUser(UUID.randomUUID().toString(), creationDTO);
 		});
 
 	}
