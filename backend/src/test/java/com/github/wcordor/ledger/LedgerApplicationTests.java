@@ -314,10 +314,11 @@ class LedgerApplicationTests {
 
 		assertEquals(1, userRepository.findByLastName("Owner I").size());
 		assertEquals(user, userRepository.findById(user_id)
-			.orElseThrow(() -> new UserNotFoundException(user_id)));
+			.orElseThrow(() -> new EntityNotFoundException("User " + user_id + " not found.")));
+			
 		assertEquals(1, userRepository.findByLastName("Owner II").size());
 		assertEquals(user2, userRepository.findById(user2_id)
-			.orElseThrow(() -> new UserNotFoundException(user2_id)));
+			.orElseThrow(() -> new EntityNotFoundException("User " + user2_id + " not found.")));
 	}
 
 	@Test
@@ -612,8 +613,8 @@ class LedgerApplicationTests {
 		assertEquals(account.getTransactions().size(), accountDTO3.transactions().size());
 		assertEquals(account.getId(), accountDTO3.id());
 
-		Long id = account.getUserId();
-        LedgerUser user3 = requestFactory.getDemoUser(id);
+		Long user3_id = account.getUserId();
+		LedgerUser user3 = userRepository.findById(user3_id).orElseThrow(() -> new EntityNotFoundException("User " + user3_id + " not found."));
 		assertEquals(accountDTO3.userName(), user3.getName());
 
 		AccountCreationDTO creationDTO = new AccountCreationDTO("New Account", new BigDecimal("10.00"), "USD", user_id);
@@ -625,7 +626,7 @@ class LedgerApplicationTests {
 		assertEquals(creationDTO.userId(), account3.getUserId());
 
 		AccountCreationDTO nonexistent = new AccountCreationDTO("Nonexistent User", new BigDecimal("0.00"), "USD", 99L);
-		assertThrows(UserNotFoundException.class, () -> {
+		assertThrows(EntityNotFoundException.class, () -> {
 			accountMapper.toAccount(nonexistent);
 		});
 
