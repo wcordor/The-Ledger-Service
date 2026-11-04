@@ -101,7 +101,7 @@ class LedgerApplicationTests {
 		transactionRepository.deleteAll();
 		idempotencyKeyRepository.deleteAll();
 
-        userDTO = requestFactory.createDemoUser("Account", "Owner I", "owner1", "p", Role.USER);
+        userDTO = requestFactory.createDemoUser("Account", "Owner I", "owner1", "password", Role.USER);
         user_id = userDTO.id();
 		username = userDTO.username();
 
@@ -110,7 +110,7 @@ class LedgerApplicationTests {
 
         userDTO = userService.getUser(username);
        
-        userDTO2 = requestFactory.createDemoUser("Account", "Owner II","owner2", "a", Role.USER);
+        userDTO2 = requestFactory.createDemoUser("Account", "Owner II", "owner2", "password2", Role.ADMIN);
         user2_id = userDTO2.id();
 		username2 = userDTO2.username();
 
