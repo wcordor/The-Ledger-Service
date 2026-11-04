@@ -258,9 +258,15 @@ class LedgerApplicationTests {
 		assertNotNull(user_id);
 		assertEquals("Account", user.getFirstName());
 		assertEquals("Owner I", user.getLastName());
+		assertEquals("owner1", user.getUsername());
+		assertEquals("password", user.getPassword());
+		assertEquals(Role.USER, user.getRole());
 		assertNotNull(user2_id);
 		assertEquals("Account", user2.getFirstName());
 		assertEquals("Owner II", user2.getLastName());
+		assertEquals("owner2", user2.getUsername());
+		assertEquals("password2", user2.getPassword());
+		assertEquals(Role.ADMIN, user2.getRole());
 
 		assertEquals(1, user.getAccounts().size());
 		assertTrue(user.getAccounts().contains(account));
@@ -271,6 +277,13 @@ class LedgerApplicationTests {
 		assertEquals("User 1", name);
 		user.addAccount(account2);
 		List<Account> userAccs = user.getAccounts();
+
+		user.setUsername("user1");
+		user.setPassword("pass-word");
+		user.setRole(Role.ADMIN);
+		assertEquals("user1", user.getUsername());
+		assertEquals("pass-word", user.getPassword());
+		assertEquals(Role.ADMIN, user.getRole());
 
 		assertFalse(2 == userAccs.size() && userAccs.contains(account2));
 
