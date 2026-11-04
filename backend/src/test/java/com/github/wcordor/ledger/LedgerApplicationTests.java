@@ -248,7 +248,7 @@ class LedgerApplicationTests {
 		});
 
 		assertThrows(UserNotFoundException.class, () -> {
-			accountService.createAccount(UUID.randomUUID().toString(), 99L, creationDTO);
+			accountService.createAccount(UUID.randomUUID().toString(), "nonexistent", creationDTO);
 		});
 	}
 
