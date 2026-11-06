@@ -430,26 +430,30 @@ class LedgerControllerTests {
     }
 
     @Test
-    void testAccountGetRequest_Single() {
+    void testAccountGetRequest_Single() throws Exception {
 
         List<String> mockTransactions = new ArrayList<>(List.of("Mock Transaction 1", "Mock Transaction 2"));
         AccountResponseDTO mockDTO = new AccountResponseDTO("GET", new BigDecimal("1000.00"),
-            "USD", "Mock User", mockTransactions, 5L);
+            "USD", "user", mockTransactions, 5L);
 
         when(accountService.getAccount(eq(5L))).thenReturn(mockDTO);
 
-        restTestClient.get().uri("/users/4/accounts/3").exchange().expectStatus().isOk().expectHeader()
-            .contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("name")
-            .isEqualTo("GET").jsonPath("balance").isEqualTo(new BigDecimal("1000.0"))
-            .jsonPath("currency").isEqualTo("USD").jsonPath("userName")
-            .isEqualTo("Mock User").jsonPath("transactions").isEqualTo(mockTransactions)
-            .jsonPath("id").isEqualTo(5L);
+        mockMvc.perform(get("/accounts/user/5")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/accounts/user/5").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(get("/accounts/user/5").with(user("user").roles("USER"))).andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("name").value("GET"))
+            .andExpect(jsonPath("balance").value(new BigDecimal("1000.0")))
+            .andExpect(jsonPath("currency").value("USD"))
+            .andExpect(jsonPath("userName").value("user"))
+            .andExpect(jsonPath("transactions").value(mockTransactions))
+            .andExpect(jsonPath("id").value(5L));
             
         when(accountService.getAccount(eq(89L))).thenThrow(new AccountNotFoundException(89L));
 
-        restTestClient.get().uri("/users/71/accounts/89").exchange().expectStatus().isNotFound()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Account 89 and/or User 71 may not exist, or Account 89 does not belong to User 71.");
+        mockMvc.perform(get("/accounts/user/89").with(user("user").roles("USER"))).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof AccountNotFoundException));
     }
 
     @Test
