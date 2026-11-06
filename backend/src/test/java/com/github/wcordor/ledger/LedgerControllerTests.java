@@ -436,7 +436,7 @@ class LedgerControllerTests {
         AccountResponseDTO mockDTO = new AccountResponseDTO("GET", new BigDecimal("1000.00"),
             "USD", "Mock User", mockTransactions, 5L);
 
-        when(accountService.getAccount(eq(3L), eq(4L))).thenReturn(mockDTO);
+        when(accountService.getAccount(eq(5L))).thenReturn(mockDTO);
 
         restTestClient.get().uri("/users/4/accounts/3").exchange().expectStatus().isOk().expectHeader()
             .contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("name")
@@ -445,8 +445,7 @@ class LedgerControllerTests {
             .isEqualTo("Mock User").jsonPath("transactions").isEqualTo(mockTransactions)
             .jsonPath("id").isEqualTo(5L);
             
-        when(accountService.getAccount(eq(89L), eq(71L)))
-            .thenThrow(new AccountNotFoundException(89L, 71L));
+        when(accountService.getAccount(eq(89L))).thenThrow(new AccountNotFoundException(89L));
 
         restTestClient.get().uri("/users/71/accounts/89").exchange().expectStatus().isNotFound()
             .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)

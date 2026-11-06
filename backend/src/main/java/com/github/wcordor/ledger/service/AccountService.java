@@ -74,9 +74,9 @@ public class AccountService {
         return accountRepository.findByUser_Id(id).stream().map(Account::getInfo).toList();
     }
 
-    public AccountResponseDTO getAccount(Long accountId, Long userId) {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
-            .orElseThrow(() -> new AccountNotFoundException(accountId, userId));
+    public AccountResponseDTO getAccount(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(accountId));
 
         return accountMapper.toDTO(account);
     }

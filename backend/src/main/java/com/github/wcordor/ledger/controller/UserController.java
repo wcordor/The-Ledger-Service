@@ -82,10 +82,10 @@ public class UserController {
 		return accountService.getAccounts(username);
 	}  
 
-	@GetMapping("/users/{id}/accounts/{accountId}")
-	public AccountResponseDTO oneAccount(@PathVariable("id") Long userId, @PathVariable("accountId") Long accountId) {
+	@GetMapping("/accounts/{username}/{accountId}")
+	public AccountResponseDTO oneAccount(@PathVariable("username") String username, @PathVariable("accountId") Long accountId) {
 
-		return accountService.getAccount(accountId, userId);
+		return accountService.getAccount(accountId);
 	}
 	
 	@PostMapping("users/{id}/accounts")

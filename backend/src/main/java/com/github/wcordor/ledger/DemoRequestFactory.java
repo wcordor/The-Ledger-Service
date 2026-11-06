@@ -63,7 +63,7 @@ public class DemoRequestFactory {
 
     public Account getDemoAccount(Long accountId, Long userId) {
 
-        return accountRepository.findByIdAndUser_Id(accountId, userId).orElseThrow(() -> new AccountNotFoundException(accountId, userId));
+        return accountRepository.findById(accountId).orElseThrow(() -> new AccountNotFoundException(accountId));
     }
 
     public Transaction getDemoTransaction(Long transactionId, Long accountId, Long userId) {
