@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -27,6 +28,7 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTe
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.client.RestTestClient;
@@ -335,7 +337,8 @@ class LedgerControllerTests {
         List<String> accounts = new ArrayList<>(List.of("Account 1"));
         UserResponseDTO mockDTO = new UserResponseDTO("Mock", "PATCH", "patchuser", accounts, 5L);
 
-        UserCreationDTO mockBody = new UserCreationDTO("Mock", "Body", "mockuser", "mockpassword", Role.USER);
+        UserPatchDTO mockBody = new UserPatchDTO(JsonNullable.of("Mock"), JsonNullable.of("Body"), JsonNullable.of("mockuser"),
+            JsonNullable.of("mockpassword"));
        
         when(userService.updateUser(eq("key"), eq("patchuser"), any(UserPatchDTO.class)))
             .thenReturn(mockDTO);
@@ -343,6 +346,11 @@ class LedgerControllerTests {
         mockMvc.perform(patch("/users/patchuser")).andExpect(status().isUnauthorized());
         mockMvc.perform(patch("/users/patchuser").with(user("not_patchuser").roles("USER"))).andExpect(status().isForbidden());
         mockMvc.perform(patch("/users/patchuser").with(user("patchuser").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isOk())
+            .andExpect(jsonPath("firstName").value("Mock")).andExpect(jsonPath("lastName").value("PATCH"))
+            .andExpect(jsonPath("username").value("patchuser")).andExpect(jsonPath("accounts").value(accounts))
+            .andExpect(jsonPath("id").value(5L));
+        mockMvc.perform(patch("/users/patchuser").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isOk())
             .andExpect(jsonPath("firstName").value("Mock")).andExpect(jsonPath("lastName").value("PATCH"))
             .andExpect(jsonPath("username").value("patchuser")).andExpect(jsonPath("accounts").value(accounts))
@@ -357,6 +365,10 @@ class LedgerControllerTests {
             .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof IdempotencyKeyAlreadyExistsException));
+        /*mockMvc.perform(patch("/users/same_key").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof IdempotencyKeyAlreadyExistsException));*/
 
         when(userService.updateUser(eq("key"), eq("not_found"), any(UserPatchDTO.class))).thenThrow(new UserNotFoundException("not_found"));
 
@@ -366,6 +378,10 @@ class LedgerControllerTests {
             .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isNotFound())
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof UserNotFoundException));
+        /*mockMvc.perform(patch("/users/not_found").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof UserNotFoundException));*/
 
         when(userService.updateUser(eq("key"), eq("null_field"), any(UserPatchDTO.class))).thenThrow(new NullPatchFieldException());
 
@@ -375,6 +391,10 @@ class LedgerControllerTests {
             .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof NullPatchFieldException));
+        /*mockMvc.perform(patch("/users/null_field").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof NullPatchFieldException));*/
     }
 
     @Test
@@ -462,30 +482,30 @@ class LedgerControllerTests {
         AccountResponseDTO mockDTO = new AccountResponseDTO("POST", new BigDecimal("250.00"), "EUR",
             "Mock User", null, 63L);
 
-        when(accountService.createAccount(eq("key"), eq(33L), any(AccountCreationDTO.class)))
+        when(accountService.createAccount(eq("key"), eq("user"), any(AccountCreationDTO.class)))
             .thenReturn(mockDTO);
 
         AccountCreationDTO mockBody 
             = new AccountCreationDTO("Mock Body", new BigDecimal("0"), "MOCK", 999L);
         
-        restTestClient.post().uri("/users/33/accounts").header("Idempotency-Key", "key")
+        restTestClient.post().uri("/users/user/accounts").header("Idempotency-Key", "key")
             .body(mockBody).exchange().expectStatus().isCreated().expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody().jsonPath("name").isEqualTo("POST").jsonPath("balance")
             .isEqualTo(new BigDecimal("250.0")).jsonPath("currency").isEqualTo("EUR")
             .jsonPath("transactions").isEmpty().jsonPath("userName").isEqualTo("Mock User")
             .jsonPath("id").isEqualTo(63L);
         
-        when(accountService.createAccount(eq("key"), eq(14L), any(AccountCreationDTO.class)))
+        when(accountService.createAccount(eq("key"), eq("invalid"), any(AccountCreationDTO.class)))
             .thenThrow(new InvalidUserIdException());
 
-        restTestClient.post().uri("/users/14/accounts").header("Idempotency-Key", "key")
+        restTestClient.post().uri("/users/invalid/accounts").header("Idempotency-Key", "key")
             .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
             .expectBody(String.class).isEqualTo("User ID does not match ID of Account Owner.");
 
-        when(accountService.createAccount(eq("key"), eq(52L), any(AccountCreationDTO.class)))
+        when(accountService.createAccount(eq("key"), eq("same_key"), any(AccountCreationDTO.class)))
             .thenThrow(new IdempotencyKeyAlreadyExistsException());
 
-        restTestClient.post().uri("/users/52/accounts").header("Idempotency-Key", "key")
+        restTestClient.post().uri("/users/same_key/accounts").header("Idempotency-Key", "key")
             .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
             .expectBody(String.class).isEqualTo("Key already exists.");
     }
@@ -563,7 +583,7 @@ class LedgerControllerTests {
             .jsonPath("id").isEqualTo(303L);
         
         when(accountService.changeName(eq("key"), eq(89L), eq(45L), any(AccountPatchDTO.class)))
-            .thenThrow(new AccountNotFoundException(89L, 45L));
+            .thenThrow(new AccountNotFoundException(89L/*, 45L*/));
 
         restTestClient.patch().uri("/users/45/accounts/89").header("Idempotency-Key", "key")
             .body(mockBody).exchange().expectStatus().isNotFound().expectHeader()
@@ -600,7 +620,7 @@ class LedgerControllerTests {
             .isEqualTo("Account 48 can't be deleted because it may not exist, belong to User 21, "
                 + "or have an empty balance.");
         
-        Mockito.doThrow(new AccountNotFoundException(91L, 36L)).when(accountService)
+        Mockito.doThrow(new AccountNotFoundException(91L/*, 36L*/)).when(accountService)
             .deleteAccount(eq(91L), eq(36L));
 
         restTestClient.delete().uri("/users/36/accounts/91/remove").exchange().expectStatus().is4xxClientError()
@@ -619,7 +639,7 @@ class LedgerControllerTests {
             .isEqualTo("Mock Transaction 1").jsonPath("$[1]").isEqualTo("Mock Transaction 2");
 
         when(transactionService.getTransactions(57L, 12L))
-            .thenThrow(new AccountNotFoundException(57L, 12L));
+            .thenThrow(new AccountNotFoundException(57L/*, 12L*/));
 
         restTestClient.get().uri("/users/12/accounts/57/transactions").exchange().expectStatus().isNotFound()
             .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
@@ -642,7 +662,7 @@ class LedgerControllerTests {
             .jsonPath("timestamp").isEqualTo(timestamp.toString()).jsonPath("id").isEqualTo(45L);
             
         when(transactionService.getTransaction(eq(96L), eq(33L), eq(13L)))
-            .thenThrow(new AccountNotFoundException(33L, 13L));
+            .thenThrow(new AccountNotFoundException(33L/*, 13L*/));
 
         restTestClient.get().uri("/users/13/accounts/33/transactions/96").exchange().expectStatus().isNotFound()
             .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
@@ -691,7 +711,7 @@ class LedgerControllerTests {
             .expectBody(String.class).isEqualTo("Account receiving funds must not be the account sending the funds.");
 
         when(transactionService.moneyTransfer(eq("key"), eq(140L), eq(549L), any(TransactionCreationDTO.class)))
-            .thenThrow(new AccountNotFoundException(549L, 140L));
+            .thenThrow(new AccountNotFoundException(549L/*, 140L*/));
 
         restTestClient.post().uri("/users/140/accounts/549/money-transfer")
             .header("Idempotency-Key", "key").body(mockBody).exchange().expectStatus().is4xxClientError()

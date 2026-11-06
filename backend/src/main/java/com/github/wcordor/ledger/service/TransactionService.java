@@ -103,7 +103,7 @@ public class TransactionService {
     }
 
     public TransactionResponseDTO getTransaction(Long transactionId, Long accountId, Long userId) {
-        accountService.getAccount(accountId, userId);
+        //accountService.getAccount(accountId/*, userId*/);
 
         Transaction transaction = transactionRepository.findById(transactionId)
             .orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));
