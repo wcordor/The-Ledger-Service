@@ -31,6 +31,7 @@ dependencies {
 	implementation("org.openapitools:jackson-databind-nullable:0.2.10")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	testImplementation("org.springframework.security:spring-security-test")
 }
 
 tasks.withType<Test> {
