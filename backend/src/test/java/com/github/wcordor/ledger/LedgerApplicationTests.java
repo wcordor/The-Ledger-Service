@@ -387,25 +387,25 @@ class LedgerApplicationTests {
 			JsonNullable.undefined());
 
 		assertThrows(NullPatchFieldException.class, () -> {
-			userService.updateUser(UUID.randomUUID().toString(), usernamePUT, nullPatch);
+			userService.updateUser(UUID.randomUUID().toString(), usernamePATCH, nullPatch);
 		});
 
 		UserPatchDTO nullPatch2 = new UserPatchDTO(JsonNullable.of(" "), JsonNullable.undefined(), JsonNullable.undefined(),
 			JsonNullable.undefined());
 
 		assertThrows(NullPatchFieldException.class, () -> {
-			userService.updateUser(UUID.randomUUID().toString(), usernamePUT, nullPatch2);
+			userService.updateUser(UUID.randomUUID().toString(), usernamePATCH, nullPatch2);
 		});
 
 		UserPatchDTO nullPatch3 = new UserPatchDTO(JsonNullable.undefined(), JsonNullable.of(" "), JsonNullable.undefined(),
 			JsonNullable.undefined());
 
 		assertThrows(NullPatchFieldException.class, () -> {
-			userService.updateUser(UUID.randomUUID().toString(), usernamePUT, nullPatch3);
+			userService.updateUser(UUID.randomUUID().toString(), usernamePATCH, nullPatch3);
 		});
 
 		assertThrows(UsernameAlreadyExistsException.class, () -> {
-			userService.createUser(UUID.randomUUID().toString(), creationDTO);
+			userService.replaceUser(usernamePATCH, sameUsername);
 		});
 
 	}
