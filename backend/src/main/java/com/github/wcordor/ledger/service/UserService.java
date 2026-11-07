@@ -56,6 +56,14 @@ public class UserService implements UserDetailsService {
 
         user.setFirstName(userDTO.firstName());
         user.setLastName(userDTO.lastName());
+        
+        String newUsername = userDTO.username();
+        LedgerUser sameName = repository.findByUsername(newUsername).orElse(null);
+
+        if (sameName != null) {
+            throw new UsernameAlreadyExistsException(newUsername);
+        }
+        
         user.setUsername(userDTO.username());
         user.setPassword(userDTO.password());
         user.setRole(userDTO.role());
