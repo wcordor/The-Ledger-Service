@@ -380,6 +380,8 @@ class LedgerApplicationTests {
 
 		assertEquals("User", userDTO.firstName());
 		assertEquals("PATCH", userDTO.lastName());
+		assertEquals("patchuser", userDTO.username());
+		assertEquals("passwordchange", user.getPassword());
 
 		UserPatchDTO nullPatch = new UserPatchDTO(JsonNullable.of(null), JsonNullable.undefined(), JsonNullable.undefined(),
 			JsonNullable.undefined());
