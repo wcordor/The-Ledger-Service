@@ -329,6 +329,11 @@ class LedgerApplicationTests {
 		userDTO = userService.replaceUser(username, creationDTO);
 		assertEquals("Owner", userDTO.firstName());
 		assertEquals("of Account I", userDTO.lastName());
+		assertEquals("replace", userDTO.username());
+
+		user = requestFactory.getDemoUser("replace");
+		assertEquals(Role.USER, user.getRole());
+		assertEquals("newpassword", user.getPassword());
 
 		String usernamePUT = userDTO.username();
 		assertThrows(UserDeletionFailureException.class, () -> {
