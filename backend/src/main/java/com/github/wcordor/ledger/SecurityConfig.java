@@ -23,6 +23,8 @@ public class SecurityConfig {
 				.requestMatchers("/", "/index.html").permitAll()
 				.requestMatchers("/admin/*").hasRole("ADMIN")
 				.requestMatchers("/admin").hasRole("ADMIN")
+				.requestMatchers(HttpMethod.PATCH, "/users/{username}").access(new WebExpressionAuthorizationManager(
+					"#username == authentication.name"))
 				.requestMatchers("/users/{username}")
 					.access(new WebExpressionAuthorizationManager(
 						"#username == authentication.name or hasRole('ADMIN')"))
