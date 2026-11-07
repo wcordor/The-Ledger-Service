@@ -404,6 +404,17 @@ class LedgerApplicationTests {
 			userService.updateUser(UUID.randomUUID().toString(), usernamePATCH, nullPatch3);
 		});
 
+		UserCreationDTO sameUsername = new UserCreationDTO("Same", "Username", usernamePATCH, "X", Role.USER);
+		assertThrows(UsernameAlreadyExistsException.class, () -> {
+			userService.createUser(UUID.randomUUID().toString(), sameUsername);
+		});
+
+		UserPatchDTO usernameInvalid = new UserPatchDTO(JsonNullable.undefined(), JsonNullable.undefined(), JsonNullable.of(usernamePATCH),
+			JsonNullable.undefined());
+		assertThrows(UsernameAlreadyExistsException.class, () -> {
+			userService.updateUser(UUID.randomUUID().toString(), usernamePATCH, usernameInvalid);
+		});
+
 		assertThrows(UsernameAlreadyExistsException.class, () -> {
 			userService.replaceUser(usernamePATCH, sameUsername);
 		});
