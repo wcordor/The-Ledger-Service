@@ -336,7 +336,8 @@ class LedgerControllerTests {
         List<String> accounts = new ArrayList<>(List.of("Account 1"));
         UserResponseDTO mockDTO = new UserResponseDTO("Mock", "PATCH", "patchuser", accounts, 5L);
 
-        UserCreationDTO mockBody = new UserCreationDTO("Mock", "Body", "mockuser", "mockpassword", Role.USER);
+        UserPatchDTO mockBody = new UserPatchDTO(JsonNullable.of("Mock"), JsonNullable.of("Body"), JsonNullable.of("mockuser"),
+            JsonNullable.of("mockpassword"));
        
         when(userService.updateUser(eq("key"), eq("patchuser"), any(UserPatchDTO.class)))
             .thenReturn(mockDTO);

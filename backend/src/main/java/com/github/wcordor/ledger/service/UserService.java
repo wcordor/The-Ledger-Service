@@ -3,6 +3,7 @@ package com.github.wcordor.ledger.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -139,6 +140,29 @@ public class UserService implements UserDetailsService {
             user.setLastName(userDTO.getLastName().get());
 
             if (userDTO.getLastName().get() == null || userDTO.getLastName().get().isBlank()) {
+                throw new NullPatchFieldException();
+            };
+        }
+
+        if (userDTO.getUsername().isPresent()) {
+            JsonNullable<String> newUsername = userDTO.getUsername();
+            String usernamePATCH = newUsername.orElse(null);
+            LedgerUser sameName = repository.findByUsername(usernamePATCH).orElse(null);
+
+            if (sameName != null) {
+                throw new UsernameAlreadyExistsException(usernamePATCH);
+            }
+            user.setUsername(userDTO.getUsername().get());
+
+            if (userDTO.getUsername().get() == null || userDTO.getUsername().get().isBlank()) {
+                throw new NullPatchFieldException();
+            };
+        }
+
+        if (userDTO.getPassword().isPresent()) {
+            user.setPassword(userDTO.getPassword().get());
+
+            if (userDTO.getPassword().get() == null || userDTO.getPassword().get().isBlank()) {
                 throw new NullPatchFieldException();
             };
         }
