@@ -8,7 +8,7 @@ public record AccountResponseDTO(
     String name,
     BigDecimal balance,
     String currency,
-    String userName,
+    String owner_username,
     List<String> transactions,
     Long id
 

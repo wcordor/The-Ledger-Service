@@ -459,7 +459,7 @@ class LedgerControllerTests {
             .andExpect(jsonPath("name").value("GET"))
             .andExpect(jsonPath("balance").value(new BigDecimal("1000.0")))
             .andExpect(jsonPath("currency").value("USD"))
-            .andExpect(jsonPath("userName").value("user"))
+            .andExpect(jsonPath("owner_username").value("user"))
             .andExpect(jsonPath("transactions").value(mockTransactions))
             .andExpect(jsonPath("id").value(5L));
             

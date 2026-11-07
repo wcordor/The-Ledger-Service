@@ -159,7 +159,7 @@ class LedgerApplicationTests {
 		assertEquals("Account I", accountDTO.name());
 		assertEquals(new BigDecimal("1000.00"), accountDTO.balance());
 		assertEquals("USD", accountDTO.currency());
-		assertEquals("Account Owner I", accountDTO.userName());
+		assertEquals("owner1", accountDTO.owner_username());
 		assertTrue(accountDTO.transactions().isEmpty());
 
 	}
@@ -661,7 +661,7 @@ class LedgerApplicationTests {
 
 		Long user3_id = account.getUserId();
 		LedgerUser user3 = userRepository.findById(user3_id).orElseThrow(() -> new EntityNotFoundException("User " + user3_id + " not found."));
-		assertEquals(accountDTO3.userName(), user3.getName());
+		assertEquals(accountDTO3.owner_username(), user3.getUsername());
 
 		AccountCreationDTO creationDTO = new AccountCreationDTO("New Account", new BigDecimal("10.00"), "USD", user_id);
 		Account account3 = accountMapper.toAccount(creationDTO);
