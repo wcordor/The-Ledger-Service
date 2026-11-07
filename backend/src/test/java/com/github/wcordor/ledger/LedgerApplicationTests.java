@@ -726,7 +726,9 @@ class LedgerApplicationTests {
 			accountService.createAccount(idempotencyKey, username, accountCreationDTO);
 		});
 		
-		UserPatchDTO userPatchDTO = new UserPatchDTO(JsonNullable.of("Idempotent"), JsonNullable.undefined());
+		UserPatchDTO userPatchDTO = new UserPatchDTO(JsonNullable.of("Idempotent"), JsonNullable.undefined(), JsonNullable.undefined(), 
+			JsonNullable.undefined());
+
 		assertThrows(IdempotencyKeyAlreadyExistsException.class, () -> {
 			userService.updateUser(idempotencyKey, username, userPatchDTO);
 		});
