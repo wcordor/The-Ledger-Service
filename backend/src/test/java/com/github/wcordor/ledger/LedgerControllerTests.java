@@ -350,6 +350,9 @@ class LedgerControllerTests {
             .andExpect(jsonPath("username").value("patchuser")).andExpect(jsonPath("accounts").value(accounts))
             .andExpect(jsonPath("id").value(5L));
 
+        mockMvc.perform(patch("/users/patchuser").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isForbidden());
+
         when(userService.updateUser(eq("key"), eq("same_key"), any(UserPatchDTO.class)))
             .thenThrow(new IdempotencyKeyAlreadyExistsException());
 
@@ -360,6 +363,9 @@ class LedgerControllerTests {
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof IdempotencyKeyAlreadyExistsException));
 
+        mockMvc.perform(patch("/users/same_key").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isForbidden());
+
         when(userService.updateUser(eq("key"), eq("not_found"), any(UserPatchDTO.class))).thenThrow(new UserNotFoundException("not_found"));
 
         mockMvc.perform(patch("/users/not_found")).andExpect(status().isUnauthorized());
@@ -369,6 +375,9 @@ class LedgerControllerTests {
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof UserNotFoundException));
 
+        mockMvc.perform(patch("/users/not_found").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isForbidden());
+
         when(userService.updateUser(eq("key"), eq("null_field"), any(UserPatchDTO.class))).thenThrow(new NullPatchFieldException());
 
         mockMvc.perform(patch("/users/null_field")).andExpect(status().isUnauthorized());
@@ -377,6 +386,9 @@ class LedgerControllerTests {
             .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof NullPatchFieldException));
+
+        mockMvc.perform(patch("/users/null_field").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isForbidden());
     }
 
     @Test
