@@ -324,7 +324,8 @@ class LedgerApplicationTests {
 	@Test
 	void testUserServiceFunctions() {
 
-		UserCreationDTO creationDTO = new UserCreationDTO("Owner", "of Account I","replace", "t", Role.USER);
+		UserCreationDTO creationDTO = new UserCreationDTO("Owner", "of Account I","replace", "newpassword", Role.USER);
+
 		userDTO = userService.replaceUser(username, creationDTO);
 		assertEquals("Owner", userDTO.firstName());
 		assertEquals("of Account I", userDTO.lastName());
