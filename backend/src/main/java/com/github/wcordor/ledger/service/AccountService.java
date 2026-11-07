@@ -94,7 +94,7 @@ public class AccountService {
         }
 
         Account account = accountRepository.findWithLockingByIdAndUser_Id(accountId, userId)
-            .orElseThrow(() -> new AccountNotFoundException(accountId, userId));
+            .orElseThrow(() -> new AccountNotFoundException(accountId));
 
         if (accountDTO.getName().isPresent()) {
             account.setName(accountDTO.getName().get());
@@ -109,10 +109,10 @@ public class AccountService {
         
         return accountMapper.toDTO(account);        
     }
-
+    
     public void deleteAccount(Long accountId, Long userId) {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
-            .orElseThrow(() -> new AccountNotFoundException(accountId, userId));
+        Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(accountId));
             
         if (account.getUserId() == userId && account.getBalance().compareTo(new BigDecimal("0.00")) == 0) {
             accountRepository.deleteById(accountId);

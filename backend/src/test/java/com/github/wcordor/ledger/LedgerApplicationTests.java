@@ -184,7 +184,7 @@ class LedgerApplicationTests {
 		assertTrue(userAccounts.contains(account));
 
 		Account actual = accountRepository.findByIdAndUser_Id(account_id, user_id)
-			.orElseThrow(() -> new AccountNotFoundException(account_id, user_id));
+			.orElseThrow(() -> new AccountNotFoundException(account_id));
 
 		assertEquals(account, actual);
 			
