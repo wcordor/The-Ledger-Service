@@ -88,11 +88,11 @@ public class UserController {
 		return accountService.getAccount(accountId);
 	}
 	
-	@PostMapping("users/{id}/accounts")
-	public ResponseEntity<?> newAccount(@RequestHeader("Idempotency-Key") String idempotencyKey,
-		@PathVariable("id") Long userId, @Valid @RequestBody AccountCreationDTO accountDTO) {
+	@PostMapping("/accounts/{username}")
+	public ResponseEntity<?> newAccount(@RequestHeader("Idempotency-Key") String idempotencyKey, @PathVariable("username") String username,
+		@Valid @RequestBody AccountCreationDTO accountDTO) {
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(idempotencyKey, userId, accountDTO));
+		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(idempotencyKey, username, accountDTO));
 	}
 
 	@PatchMapping("users/{id}/accounts/{accountId}")

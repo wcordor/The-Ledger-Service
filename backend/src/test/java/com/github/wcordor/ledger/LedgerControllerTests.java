@@ -471,23 +471,26 @@ class LedgerControllerTests {
     }
 
     @Test
-    void testAccountPostRequest() {
+    void testAccountPostRequest() throws Exception {
 
         AccountResponseDTO mockDTO = new AccountResponseDTO("POST", new BigDecimal("250.00"), "EUR",
-            "Mock User", null, 63L);
+            "mockuser", null, 63L);
 
-        when(accountService.createAccount(eq("key"), eq(33L), any(AccountCreationDTO.class)))
+        when(accountService.createAccount(eq("key"), eq("user"), any(AccountCreationDTO.class)))
             .thenReturn(mockDTO);
 
         AccountCreationDTO mockBody 
             = new AccountCreationDTO("Mock Body", new BigDecimal("0"), "MOCK", 999L);
-        
-        restTestClient.post().uri("/users/33/accounts").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().isCreated().expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .expectBody().jsonPath("name").isEqualTo("POST").jsonPath("balance")
-            .isEqualTo(new BigDecimal("250.0")).jsonPath("currency").isEqualTo("EUR")
-            .jsonPath("transactions").isEmpty().jsonPath("userName").isEqualTo("Mock User")
-            .jsonPath("id").isEqualTo(63L);
+
+        mockMvc.perform(post("/accounts/user")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/accounts/user").with(user("not_user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/accounts/user").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isCreated())
+            .andExpect(jsonPath("name").value("POST")).andExpect(jsonPath("balance").value(new BigDecimal("250.0")))
+            .andExpect(jsonPath("currency").value("EUR")).andExpect(jsonPath("owner_username").value("mockuser"))
+            .andExpect(jsonPath("transactions").isEmpty()).andExpect(jsonPath("id").value(63L));
         
         when(accountService.createAccount(eq("key"), eq(14L), any(AccountCreationDTO.class)))
             .thenThrow(new InvalidUserIdException());
@@ -496,12 +499,17 @@ class LedgerControllerTests {
             .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
             .expectBody(String.class).isEqualTo("User ID does not match ID of Account Owner.");
 
-        when(accountService.createAccount(eq("key"), eq(52L), any(AccountCreationDTO.class)))
+        when(accountService.createAccount(eq("key"), eq("same_key"), any(AccountCreationDTO.class)))
             .thenThrow(new IdempotencyKeyAlreadyExistsException());
 
-        restTestClient.post().uri("/users/52/accounts").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo("Key already exists.");
+        mockMvc.perform(post("/accounts/same_key")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/accounts/same_key").with(user("not_same_key").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isForbidden());
+        
+        mockMvc.perform(post("/accounts/same_key").with(user("same_key").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof IdempotencyKeyAlreadyExistsException));
     }
 
     @Test

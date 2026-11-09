@@ -40,7 +40,7 @@ public class AccountService {
         this.userService = userService;
     }
 
-    public AccountResponseDTO createAccount(String idempotencyKey, Long userId, AccountCreationDTO accountDTO) {
+    public AccountResponseDTO createAccount(String idempotencyKey, String username, AccountCreationDTO accountDTO) {
         IdempotencyKey savedKey = idempotencyKeyRepository.findByKey(idempotencyKey).orElse(null);
 
         if (savedKey != null) {
