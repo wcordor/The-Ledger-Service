@@ -19,7 +19,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -150,7 +149,7 @@ class LedgerControllerTests {
         mockMvc.perform(post("/admin").with(user("admin").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isCreated())
             .andExpect(jsonPath("firstName").value("Mock")).andExpect(jsonPath("lastName").value("POST"))
-            .andExpect(jsonPath("username").value("mockuser")).andExpect(jsonPath("accounts").value(Matchers.nullValue()))
+            .andExpect(jsonPath("username").value("mockuser")).andExpect(jsonPath("accounts").isEmpty())
             .andExpect(jsonPath("id").value(3L));
 
         when(userService.createUser(eq("key"), any(UserCreationDTO.class)))
