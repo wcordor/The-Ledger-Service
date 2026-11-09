@@ -10,10 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.github.wcordor.ledger.dtos.accountDTO.*;
 import com.github.wcordor.ledger.entity.Account;
 import com.github.wcordor.ledger.entity.IdempotencyKey;
+import com.github.wcordor.ledger.entity.LedgerUser;
 import com.github.wcordor.ledger.exception.AccountDeletionFailureException;
 import com.github.wcordor.ledger.exception.AccountNotFoundException;
 import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
-import com.github.wcordor.ledger.exception.InvalidUserIdException;
 import com.github.wcordor.ledger.exception.NullPatchFieldException;
 import com.github.wcordor.ledger.exception.UserNotFoundException;
 import com.github.wcordor.ledger.mapper.AccountMapper;
@@ -53,11 +53,7 @@ public class AccountService {
 
         LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
 
-        if (!accountDTO.userId().equals(userId)) {
-            throw new InvalidUserIdException();
-        }
-
-        Account account = accountRepository.save(accountMapper.toAccount(accountDTO));
+        Account account = accountRepository.save(accountMapper.toAccount(username, accountDTO));
 
         IdempotencyKey newKey = new IdempotencyKey(idempotencyKey, LocalDateTime.now().plusHours(24));
         idempotencyKeyRepository.save(newKey);

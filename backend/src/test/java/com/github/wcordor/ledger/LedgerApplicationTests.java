@@ -193,13 +193,13 @@ class LedgerApplicationTests {
 	@Test
 	void testAccountServiceFunctions() {
 
-		AccountCreationDTO creationDTO = new AccountCreationDTO("Account III", new BigDecimal("300.00"),
-			"USD", user_id);
+		AccountCreationDTO creationDTO = new AccountCreationDTO("Account III", new BigDecimal("300.00"), "USD");
 			
 		AccountResponseDTO accountDTO3 = accountService.createAccount("Key-Test", username, creationDTO);
 
 		Long account3_id = accountDTO3.id();
 		Account account3 = requestFactory.getDemoAccount(account3_id, user_id);
+		assertEquals(user_id, account3.getUserId());
 
 		List<String> accountList = accountService.getAccounts(username);
 		assertEquals(2, accountList.size());
@@ -240,11 +240,6 @@ class LedgerApplicationTests {
 
 		assertThrows(AccountNotFoundException.class, () -> {
 			accountService.getAccount(account3_id);
-		});
-
-		AccountCreationDTO mismatch = new AccountCreationDTO("user_id mismatch", new BigDecimal("0.00"), "USD", user_id);
-		assertThrows(InvalidUserIdException.class, () -> {
-			accountService.createAccount(UUID.randomUUID().toString(), username2, mismatch);
 		});
 
 		assertThrows(UserNotFoundException.class, () -> {
@@ -663,17 +658,16 @@ class LedgerApplicationTests {
 		LedgerUser user3 = userRepository.findById(user3_id).orElseThrow(() -> new EntityNotFoundException("User " + user3_id + " not found."));
 		assertEquals(accountDTO3.owner_username(), user3.getUsername());
 
-		AccountCreationDTO creationDTO = new AccountCreationDTO("New Account", new BigDecimal("10.00"), "USD", user_id);
-		Account account3 = accountMapper.toAccount(creationDTO);
+		AccountCreationDTO creationDTO = new AccountCreationDTO("New Account", new BigDecimal("10.00"), "USD");
+		Account account3 = accountMapper.toAccount(username, creationDTO);
 
 		assertEquals(creationDTO.name(), account3.getName());
 		assertEquals(creationDTO.initialDeposit(), account3.getBalance());
 		assertEquals(creationDTO.currency(), account3.getCurrency());
-		assertEquals(creationDTO.userId(), account3.getUserId());
 
-		AccountCreationDTO nonexistent = new AccountCreationDTO("Nonexistent User", new BigDecimal("0.00"), "USD", 99L);
-		assertThrows(EntityNotFoundException.class, () -> {
-			accountMapper.toAccount(nonexistent);
+		AccountCreationDTO nonexistent = new AccountCreationDTO("Nonexistent User", new BigDecimal("0.00"), "USD");
+		assertThrows(UserNotFoundException.class, () -> {
+			accountMapper.toAccount("nonexistent", nonexistent);
 		});
 
 	}
@@ -721,7 +715,7 @@ class LedgerApplicationTests {
 			userService.createUser(idempotencyKey, userCreationDTO);
 		});
 
-		AccountCreationDTO accountCreationDTO = new AccountCreationDTO("Idempotent Account", new BigDecimal("100.00"), "USD", user_id);
+		AccountCreationDTO accountCreationDTO = new AccountCreationDTO("Idempotent Account", new BigDecimal("100.00"), "USD");
 		assertThrows(IdempotencyKeyAlreadyExistsException.class, () -> {
 			accountService.createAccount(idempotencyKey, username, accountCreationDTO);
 		});

@@ -53,7 +53,7 @@ public class DemoRequestFactory {
         LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
         
         return accountService.createAccount(
-            UUID.randomUUID().toString(), username, new AccountCreationDTO(name, initialDeposit, currency, user.getId())
+            UUID.randomUUID().toString(), username, new AccountCreationDTO(name, initialDeposit, currency)
         );    
     }
 

@@ -16,8 +16,5 @@ public record AccountCreationDTO(
     BigDecimal initialDeposit,
 
     @NotBlank(message = "Please add currency.")
-    String currency,
-
-    @NotNull(message = "User Id must not be null.")
-    Long userId
+    String currency
 ) {}

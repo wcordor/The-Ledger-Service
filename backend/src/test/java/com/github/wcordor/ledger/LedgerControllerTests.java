@@ -46,7 +46,6 @@ import com.github.wcordor.ledger.exception.AccountNotFoundException;
 import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
 import com.github.wcordor.ledger.exception.InsufficientFundsException;
 import com.github.wcordor.ledger.exception.InvalidTransferException;
-import com.github.wcordor.ledger.exception.InvalidUserIdException;
 import com.github.wcordor.ledger.exception.NullPatchFieldException;
 import com.github.wcordor.ledger.exception.TransactionNotFoundException;
 import com.github.wcordor.ledger.exception.UserDeletionFailureException;
@@ -480,7 +479,7 @@ class LedgerControllerTests {
             .thenReturn(mockDTO);
 
         AccountCreationDTO mockBody 
-            = new AccountCreationDTO("Mock Body", new BigDecimal("0"), "MOCK", 999L);
+            = new AccountCreationDTO("Mock Body", new BigDecimal("0"), "MOCK");
 
         mockMvc.perform(post("/accounts/user")).andExpect(status().isUnauthorized());
         mockMvc.perform(post("/accounts/user").with(user("not_user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
@@ -491,13 +490,6 @@ class LedgerControllerTests {
             .andExpect(jsonPath("name").value("POST")).andExpect(jsonPath("balance").value(new BigDecimal("250.0")))
             .andExpect(jsonPath("currency").value("EUR")).andExpect(jsonPath("owner_username").value("mockuser"))
             .andExpect(jsonPath("transactions").isEmpty()).andExpect(jsonPath("id").value(63L));
-        
-        when(accountService.createAccount(eq("key"), eq(14L), any(AccountCreationDTO.class)))
-            .thenThrow(new InvalidUserIdException());
-
-        restTestClient.post().uri("/users/14/accounts").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo("User ID does not match ID of Account Owner.");
 
         when(accountService.createAccount(eq("key"), eq("same_key"), any(AccountCreationDTO.class)))
             .thenThrow(new IdempotencyKeyAlreadyExistsException());
