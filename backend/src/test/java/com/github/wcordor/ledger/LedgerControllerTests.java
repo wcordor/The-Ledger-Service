@@ -504,55 +504,45 @@ class LedgerControllerTests {
     }
 
     @Test
-    void testBadAccountPostRequests() {
+    void testBadAccountPostRequests() throws Exception {
         
         String blankName = "Account name must not be blank.";
         String nullInitialDeposit = "Initial deposit must not be null.";
         String blankCurrency = "Please add currency.";
-        String nullUserId = "User Id must not be null.";
         String negativeDeposit = "Initial deposit cannot be negative.";
 
-        restTestClient.post().uri("/users/64/accounts").header("Idempotency-Key", "key")
-            .body(new AccountCreationDTO(null, new BigDecimal("10.00"), "USD", 64L)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(blankName);
+        mockMvc.perform(post("/accounts/user").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AccountCreationDTO(null, new BigDecimal("10.00"), "USD")))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(blankName));
 
-        restTestClient.post().uri("/users/64/accounts").header("Idempotency-Key", "key")
-            .body(new AccountCreationDTO(" ", new BigDecimal("10.00"), "USD", 64L)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(blankName);
+        mockMvc.perform(post("/accounts/user").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AccountCreationDTO(" ", new BigDecimal("10.00"), "USD")))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(blankName));
 
-        restTestClient.post().uri("/users/78/accounts").header("Idempotency-Key", "key")
-            .body(new AccountCreationDTO("Mock Body", null, "USD", 78L)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(nullInitialDeposit);
+        mockMvc.perform(post("/accounts/user").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AccountCreationDTO("Mock Body", null, "USD")))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(nullInitialDeposit));
 
-        restTestClient.post().uri("/users/83/accounts").header("Idempotency-Key", "key")
-            .body(new AccountCreationDTO("Mock Body", new BigDecimal("10.00"), null, 78L)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(blankCurrency);
+        mockMvc.perform(post("/accounts/user").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AccountCreationDTO("Mock Body", new BigDecimal("-10.00"), "USD")))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(negativeDeposit));
 
-        restTestClient.post().uri("/users/83/accounts").header("Idempotency-Key", "key")
-            .body(new AccountCreationDTO("Mock Body", new BigDecimal("10.00"), " ", 78L)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(blankCurrency);
+        mockMvc.perform(post("/accounts/user").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AccountCreationDTO("Mock Body", new BigDecimal("10.00"), null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(blankCurrency));
 
-        restTestClient.post().uri("/users/83/accounts").header("Idempotency-Key", "key")
-            .body(new AccountCreationDTO("Mock Body", new BigDecimal("10.00"), "USD", null)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(nullUserId);
-        
-        restTestClient.post().uri("/users/99/accounts").header("Idempotency-Key", "key")
-            .body(new AccountCreationDTO(null, null, null, null)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).value(message -> assertTrue(message.contains(blankName) 
-                && message.contains(nullInitialDeposit) && message.contains(blankCurrency) && message.contains(nullUserId))
-            );
+        mockMvc.perform(post("/accounts/user").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AccountCreationDTO("Mock Body", new BigDecimal("10.00"), " ")))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest()).andExpect(content().string(blankCurrency));
 
-        restTestClient.post().uri("/users/83/accounts").header("Idempotency-Key", "key")
-            .body(new AccountCreationDTO("Mock Body", new BigDecimal("-10.00"), "USD", 3L)).exchange()
-            .expectStatus().isBadRequest().expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-            .expectBody(String.class).isEqualTo(negativeDeposit);
+        mockMvc.perform(post("/accounts/user").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AccountCreationDTO(null, null, null)))
+            .header("Idempotency-Key", "key")).andExpect(status().isBadRequest())
+            .andExpect(result -> {
+                String responseBody = result.getResponse().getContentAsString();
+                assertTrue(responseBody.contains(blankName) && responseBody.contains(nullInitialDeposit)
+                    && responseBody.contains(blankCurrency));
+            });
     }
 
     @Test
