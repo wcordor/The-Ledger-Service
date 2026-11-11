@@ -29,15 +29,13 @@ public class AccountService {
     private final UserRepository userRepository;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final AccountMapper accountMapper;
-    private final UserService userService;
 
     public AccountService(AccountRepository accountRepository, UserRepository userRepository,
-        IdempotencyKeyRepository idempotencyKeyRepository, AccountMapper accountMapper, UserService userService) {
+        IdempotencyKeyRepository idempotencyKeyRepository, AccountMapper accountMapper) {
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.accountMapper = accountMapper;
-        this.userService = userService;
     }
 
     public AccountResponseDTO createAccount(String idempotencyKey, String username, AccountCreationDTO accountDTO) {
