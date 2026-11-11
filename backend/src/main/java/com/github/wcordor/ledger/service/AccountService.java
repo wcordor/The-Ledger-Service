@@ -78,7 +78,7 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountResponseDTO changeName(String idempotencyKey, Long accountId, Long userId, AccountPatchDTO accountDTO) {
+    public AccountResponseDTO changeName(String idempotencyKey, Long accountId, AccountPatchDTO accountDTO) {
         IdempotencyKey savedKey = idempotencyKeyRepository.findByKey(idempotencyKey).orElse(null);
 
         if (savedKey != null) {

@@ -210,18 +210,18 @@ class LedgerApplicationTests {
 
 		AccountPatchDTO patchDTO = new AccountPatchDTO(JsonNullable.of("Savings"));
 		accountDTO3 = accountService.changeName(UUID.randomUUID().toString(),
-			account3_id, user_id, patchDTO);
+			account3_id, patchDTO);
 
 		assertEquals("Savings", accountDTO3.name());
 
 		AccountPatchDTO nullPatch = new AccountPatchDTO(JsonNullable.of(null));
 		assertThrows(NullPatchFieldException.class, () -> {
-			accountService.changeName(UUID.randomUUID().toString(), account3_id, user_id, nullPatch);
+			accountService.changeName(UUID.randomUUID().toString(), account3_id, nullPatch);
 		});
 
 		AccountPatchDTO blankPatch = new AccountPatchDTO(JsonNullable.of(" "));
 		assertThrows(NullPatchFieldException.class, () -> {
-			accountService.changeName(UUID.randomUUID().toString(), account3_id, user_id, blankPatch);
+			accountService.changeName(UUID.randomUUID().toString(), account3_id, blankPatch);
 		});
 
 		assertThrows(AccountDeletionFailureException.class, () -> {
@@ -729,7 +729,7 @@ class LedgerApplicationTests {
 
 		AccountPatchDTO accountPatchDTO = new AccountPatchDTO(JsonNullable.of("Idempotent Account"));
 		assertThrows(IdempotencyKeyAlreadyExistsException.class, () -> {
-			accountService.changeName(idempotencyKey, account_id, user_id, accountPatchDTO);
+			accountService.changeName(idempotencyKey, account_id, accountPatchDTO);
 		});
 
 		TransactionCreationDTO transactionCreationDTO = new TransactionCreationDTO(account2_id, new BigDecimal("50.00"), "USD");

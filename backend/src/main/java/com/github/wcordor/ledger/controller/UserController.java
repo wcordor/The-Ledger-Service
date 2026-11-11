@@ -95,13 +95,11 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(idempotencyKey, username, accountDTO));
 	}
 
-	@PatchMapping("users/{id}/accounts/{accountId}")
-	public ResponseEntity<?> changeAccountName(@RequestHeader("Idempotency-Key") String idempotencyKey,
-		@PathVariable("id") Long userId, @PathVariable("accountId") Long accountId, @RequestBody AccountPatchDTO patchDTO) {
+	@PatchMapping("accounts/{username}/{accountId}")
+	public ResponseEntity<?> changeAccountName(@RequestHeader("Idempotency-Key") String idempotencyKey, @PathVariable("accountId") Long accountId,
+		@RequestBody AccountPatchDTO patchDTO) {
 
-		return ResponseEntity.ok(
-			accountService.changeName(idempotencyKey, accountId, userId, patchDTO)
-		);
+		return ResponseEntity.ok(accountService.changeName(idempotencyKey, accountId, patchDTO));
 	}
 
 	@DeleteMapping("users/{id}/accounts/{accountId}/remove")

@@ -552,7 +552,7 @@ class LedgerControllerTests {
         AccountResponseDTO mockDTO = new AccountResponseDTO("PATCH", new BigDecimal("250.00"), "EUR",
             "Mock User", mockTransactions, 303L);
 
-        when(accountService.changeName(eq("key"), eq(544L), eq(303L), any(AccountPatchDTO.class)))
+        when(accountService.changeName(eq("key"), eq(544L), any(AccountPatchDTO.class)))
             .thenReturn(mockDTO);
 
         AccountPatchDTO mockBody 
@@ -565,15 +565,15 @@ class LedgerControllerTests {
             .jsonPath("transactions").isEqualTo(mockTransactions).jsonPath("userName").isEqualTo("Mock User")
             .jsonPath("id").isEqualTo(303L);
         
-        when(accountService.changeName(eq("key"), eq(89L), eq(45L), any(AccountPatchDTO.class)))
-            .thenThrow(new AccountNotFoundException(89L, 45L));
+        when(accountService.changeName(eq("key"), eq(89L), any(AccountPatchDTO.class)))
+            .thenThrow(new AccountNotFoundException(89L));
 
         restTestClient.patch().uri("/users/45/accounts/89").header("Idempotency-Key", "key")
             .body(mockBody).exchange().expectStatus().isNotFound().expectHeader()
             .contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
             .isEqualTo("Account 89 and/or User 45 may not exist, or Account 89 does not belong to User 45.");
 
-        when(accountService.changeName(eq("key"), eq(22L), eq(14L), any(AccountPatchDTO.class)))
+        when(accountService.changeName(eq("key"), eq(22L), any(AccountPatchDTO.class)))
             .thenThrow(new IdempotencyKeyAlreadyExistsException());
 
         restTestClient.patch().uri("/users/14/accounts/22").header("Idempotency-Key", "key")
@@ -581,7 +581,7 @@ class LedgerControllerTests {
             .contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
             .isEqualTo("Key already exists.");
 
-        when(accountService.changeName(eq("key"), eq(222L), eq(143L), any(AccountPatchDTO.class)))
+        when(accountService.changeName(eq("key"), eq(222L), any(AccountPatchDTO.class)))
             .thenThrow(new NullPatchFieldException());
 
         restTestClient.patch().uri("/users/143/accounts/222").header("Idempotency-Key", "key")
