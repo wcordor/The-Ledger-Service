@@ -104,16 +104,15 @@ public class AccountService {
         return accountMapper.toDTO(account);        
     }
     
-    public void deleteAccount(Long accountId, Long userId) {
+    public void deleteAccount(Long accountId) {
         Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new AccountNotFoundException(accountId));
             
-        if (account.getUserId() == userId && account.getBalance().compareTo(new BigDecimal("0.00")) == 0) {
-            accountRepository.deleteById(accountId);
+        if (account.getBalance().compareTo(new BigDecimal("0.00")) != 0) {
+            throw new AccountDeletionFailureException(accountId);
         }
-        else {
-            throw new AccountDeletionFailureException(accountId, userId);
-        }
+
+        accountRepository.deleteById(accountId);
     }
 
 }

@@ -225,13 +225,13 @@ class LedgerApplicationTests {
 		});
 
 		assertThrows(AccountDeletionFailureException.class, () -> {
-			accountService.deleteAccount(account3_id, user_id);
+			accountService.deleteAccount(account3_id);
 		});
 
 		TransactionCreationDTO transferDTO = new TransactionCreationDTO(account_id, new BigDecimal("300.00"), "USD");
 		transactionService.moneyTransfer(UUID.randomUUID().toString(), user_id, account3_id, transferDTO);
 
-		accountService.deleteAccount(account3_id, user_id);
+		accountService.deleteAccount(account3_id);
 
 		accountList = accountService.getAccounts(username);	
 		account = requestFactory.getDemoAccount(account_id, user_id);

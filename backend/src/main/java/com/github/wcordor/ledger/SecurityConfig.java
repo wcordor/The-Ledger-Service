@@ -21,7 +21,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers(HttpMethod.POST, "/users").permitAll()
 				.requestMatchers("/", "/index.html").permitAll()
-				.requestMatchers("/admin/*").hasRole("ADMIN")
+				.requestMatchers("/admin/**").hasRole("ADMIN")
 				.requestMatchers("/admin").hasRole("ADMIN")
 				.requestMatchers(HttpMethod.PATCH, "/users/{username}").access(new WebExpressionAuthorizationManager(
 					"#username == authentication.name"))

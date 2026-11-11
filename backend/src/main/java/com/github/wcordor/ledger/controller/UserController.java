@@ -102,10 +102,9 @@ public class UserController {
 		return ResponseEntity.ok(accountService.changeName(idempotencyKey, accountId, patchDTO));
 	}
 
-	@DeleteMapping("users/{id}/accounts/{accountId}/remove")
-	public ResponseEntity<?> deleteAccount(@PathVariable("id") Long userId, @PathVariable("accountId") Long accountId) {
-
-		accountService.deleteAccount(accountId, userId);
+	@DeleteMapping("admin/{accountId}/remove")
+	public ResponseEntity<?> deleteAccount(@PathVariable("accountId") Long accountId) {
+		accountService.deleteAccount(accountId);
 
 		return ResponseEntity.noContent().build();
 	}
