@@ -89,7 +89,7 @@ public class AccountService {
             }
         }
 
-        Account account = accountRepository.findWithLockingByIdAndUser_Id(accountId, userId)
+        Account account = accountRepository.findWithLockingById(accountId)
             .orElseThrow(() -> new AccountNotFoundException(accountId));
 
         if (accountDTO.getName().isPresent()) {

@@ -18,6 +18,8 @@ import jakarta.persistence.LockModeType;
 public interface AccountRepository extends JpaRepository<Account, Long> {
     
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = {"sent", "received"})
+    @Query("SELECT a FROM Account a WHERE a.id = :id")
     Optional<Account> findWithLockingById(Long id);
 
     List<Account> findByName(String name);
