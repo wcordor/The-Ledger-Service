@@ -601,24 +601,32 @@ class LedgerControllerTests {
     }
 
     @Test
-    void testAccountDeleteRequest() {
+    void testAccountDeleteRequest() throws Exception {
 
-        restTestClient.delete().uri("/users/21/accounts/48/remove").exchange().expectStatus().is2xxSuccessful();
+        mockMvc.perform(delete("/admin/34/remove")).andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/admin/34/remove").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/admin/34/remove").with(user("user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/admin/34/remove").with(user("admin").roles("ADMIN"))).andExpect(status().isNoContent());
 
-        Mockito.doThrow(new AccountDeletionFailureException(48L, 21L)).when(accountService)
-            .deleteAccount(eq(48L), eq(21L));
+        Mockito.doThrow(new AccountDeletionFailureException(48L)).when(accountService)
+            .deleteAccount(eq(48L));
 
-        restTestClient.delete().uri("/users/21/accounts/48/remove").exchange().expectStatus().is4xxClientError()
-            .expectBody(String.class)
-            .isEqualTo("Account 48 can't be deleted because it may not exist, belong to User 21, "
-                + "or have an empty balance.");
+        mockMvc.perform(delete("/admin/48/remove")).andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/admin/48/remove").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/admin/48/remove").with(user("user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/admin/48/remove").with(user("admin").roles("ADMIN"))).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof AccountDeletionFailureException));
         
-        Mockito.doThrow(new AccountNotFoundException(91L, 36L)).when(accountService)
-            .deleteAccount(eq(91L), eq(36L));
+        Mockito.doThrow(new AccountNotFoundException(91L)).when(accountService)
+            .deleteAccount(eq(91L));
 
-        restTestClient.delete().uri("/users/36/accounts/91/remove").exchange().expectStatus().is4xxClientError()
-            .expectBody(String.class).isEqualTo("Account 91 and/or User 36 may not exist, "
-                + "or Account 91 does not belong to User 36.");
+        mockMvc.perform(delete("/admin/91/remove")).andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/admin/91/remove").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/admin/91/remove").with(user("user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/admin/91/remove").with(user("admin").roles("ADMIN"))).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof AccountNotFoundException));
     }
 
      @Test
