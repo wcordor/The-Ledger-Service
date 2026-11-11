@@ -546,48 +546,58 @@ class LedgerControllerTests {
     }
 
     @Test
-    void testAccountPatchRequest() {
+    void testAccountPatchRequest() throws Exception {
 
         List<String> mockTransactions = new ArrayList<>(List.of("Mock Transaction 1", "Mock Transaction 2"));
         AccountResponseDTO mockDTO = new AccountResponseDTO("PATCH", new BigDecimal("250.00"), "EUR",
-            "Mock User", mockTransactions, 303L);
+            "mockuser", mockTransactions, 544L);
 
-        when(accountService.changeName(eq("key"), eq(544L), any(AccountPatchDTO.class)))
-            .thenReturn(mockDTO);
+        when(accountService.changeName(eq("key"), eq(544L), any(AccountPatchDTO.class))).thenReturn(mockDTO);
 
-        AccountPatchDTO mockBody 
-            = new AccountPatchDTO(JsonNullable.of("Mock Body"));
-        
-        restTestClient.patch().uri("/users/303/accounts/544").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().isOk().expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .expectBody().jsonPath("name").isEqualTo("PATCH").jsonPath("balance")
-            .isEqualTo(new BigDecimal("250.0")).jsonPath("currency").isEqualTo("EUR")
-            .jsonPath("transactions").isEqualTo(mockTransactions).jsonPath("userName").isEqualTo("Mock User")
-            .jsonPath("id").isEqualTo(303L);
+        AccountPatchDTO mockBody = new AccountPatchDTO(JsonNullable.of("mock_body"));
+
+        mockMvc.perform(patch("/accounts/user/544")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/accounts/user/544").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/accounts/user/544").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isOk())
+            .andExpect(jsonPath("name").value("PATCH")).andExpect(jsonPath("balance").value(new BigDecimal("250.0")))
+            .andExpect(jsonPath("currency").value("EUR")).andExpect(jsonPath("transactions").value(mockTransactions))
+            .andExpect(jsonPath("owner_username").value("mockuser")).andExpect(jsonPath("id").value(544L));
+
+        mockMvc.perform(patch("/accounts/user/544").with(user("admin").roles("ADMIN"))).andExpect(status().isForbidden());
         
         when(accountService.changeName(eq("key"), eq(89L), any(AccountPatchDTO.class)))
             .thenThrow(new AccountNotFoundException(89L));
 
-        restTestClient.patch().uri("/users/45/accounts/89").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().isNotFound().expectHeader()
-            .contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Account 89 and/or User 45 may not exist, or Account 89 does not belong to User 45.");
+        mockMvc.perform(patch("/accounts/user/89")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/accounts/user/89").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/accounts/user/89").with(user("admin").roles("ADMIN"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/accounts/user/89").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof AccountNotFoundException));
 
         when(accountService.changeName(eq("key"), eq(22L), any(AccountPatchDTO.class)))
             .thenThrow(new IdempotencyKeyAlreadyExistsException());
 
-        restTestClient.patch().uri("/users/14/accounts/22").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader()
-            .contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Key already exists.");
+        mockMvc.perform(patch("/accounts/user/22")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/accounts/user/22").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/accounts/user/89").with(user("admin").roles("ADMIN"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/accounts/user/22").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof IdempotencyKeyAlreadyExistsException));
 
         when(accountService.changeName(eq("key"), eq(222L), any(AccountPatchDTO.class)))
             .thenThrow(new NullPatchFieldException());
 
-        restTestClient.patch().uri("/users/143/accounts/222").header("Idempotency-Key", "key")
-            .body(mockBody).exchange().expectStatus().is4xxClientError().expectHeader()
-            .contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("The field(s) selected for change must not be null.");
+        mockMvc.perform(patch("/accounts/user/222")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/accounts/user/222").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/accounts/user/222").with(user("admin").roles("ADMIN"))).andExpect(status().isForbidden());
+        mockMvc.perform(patch("/accounts/user/222").with(user("user").roles("USER")).contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(mockBody)).header("Idempotency-Key", "key")).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof NullPatchFieldException));
     }
 
     @Test
