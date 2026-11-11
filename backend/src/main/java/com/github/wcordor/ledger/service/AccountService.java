@@ -51,8 +51,6 @@ public class AccountService {
             }
         }
 
-        LedgerUser user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
-
         Account account = accountRepository.save(accountMapper.toAccount(username, accountDTO));
 
         IdempotencyKey newKey = new IdempotencyKey(idempotencyKey, LocalDateTime.now().plusHours(24));
