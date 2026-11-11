@@ -83,7 +83,7 @@ public class UserController {
 	}  
 
 	@GetMapping("/accounts/{username}/{accountId}")
-	public AccountResponseDTO oneAccount(@PathVariable("username") String username, @PathVariable("accountId") Long accountId) {
+	public AccountResponseDTO oneAccount(@PathVariable("accountId") Long accountId) {
 
 		return accountService.getAccount(accountId);
 	}
