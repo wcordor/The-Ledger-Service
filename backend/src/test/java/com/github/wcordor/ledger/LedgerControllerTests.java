@@ -467,6 +467,12 @@ class LedgerControllerTests {
         mockMvc.perform(get("/accounts/user/89").with(user("user").roles("USER"))).andExpect(status().isNotFound())
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof AccountNotFoundException));
+
+        when(accountService.getAccount(eq("user"), eq(150L))).thenThrow(new InvalidUsernameException());
+
+        mockMvc.perform(get("/accounts/user/150").with(user("user").roles("USER"))).andExpect(status().isConflict())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUsernameException));
     }
 
     @Test

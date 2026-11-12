@@ -242,6 +242,10 @@ class LedgerApplicationTests {
 			accountService.getAccount(username, account3_id);
 		});
 
+		assertThrows(InvalidUsernameException.class, () -> {
+			accountService.getAccount(username2, account_id);
+		});
+
 		assertThrows(UserNotFoundException.class, () -> {
 			accountService.createAccount(UUID.randomUUID().toString(), "nonexistent", creationDTO);
 		});
@@ -314,6 +318,10 @@ class LedgerApplicationTests {
 		assertEquals(1, userRepository.findByLastName("Owner II").size());
 		assertEquals(user2, userRepository.findById(user2_id)
 			.orElseThrow(() -> new EntityNotFoundException("User " + user2_id + " not found.")));
+
+		assertThrows(UserNotFoundException.class, () -> {
+			userRepository.findById(99L).orElseThrow(() -> new UserNotFoundException(99L));
+		});
 	}
 
 	@Test
