@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.github.wcordor.ledger.exception.InsufficientFundsException;
+import com.github.wcordor.ledger.exception.InvalidAccountIdException;
 import com.github.wcordor.ledger.exception.InvalidTransferException;
 import com.github.wcordor.ledger.exception.TransactionNotFoundException;
 
@@ -35,6 +36,12 @@ public class TransactionExceptionAdvice {
     @ExceptionHandler(EntityNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String entityNotFoundHandler(EntityNotFoundException e) {
+        return e.getMessage();
+    }
+
+    @ExceptionHandler(InvalidAccountIdException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public String invalidAccountIdHandler(InvalidAccountIdException e) {
         return e.getMessage();
     }
 }

@@ -14,6 +14,7 @@ import com.github.wcordor.ledger.entity.Account;
 import com.github.wcordor.ledger.entity.LedgerUser;
 import com.github.wcordor.ledger.entity.Transaction;
 import com.github.wcordor.ledger.exception.AccountNotFoundException;
+import com.github.wcordor.ledger.exception.InvalidAccountIdException;
 import com.github.wcordor.ledger.exception.TransactionNotFoundException;
 import com.github.wcordor.ledger.exception.UserNotFoundException;
 import com.github.wcordor.ledger.repository.AccountRepository;
@@ -71,13 +72,13 @@ public class DemoRequestFactory {
         getDemoAccount(accountId, userId);
 
         Transaction transaction = transactionRepository.findById(transactionId)
-            .orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));
+            .orElseThrow(() -> new TransactionNotFoundException(transactionId));
 
         if (transaction.getSenderId() != accountId && transaction.getReceiverId() != accountId) {
-            throw new TransactionNotFoundException(transactionId, accountId);
+            throw new InvalidAccountIdException(accountId);
         }
 
-        return transactionRepository.findById(transactionId).orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));
+        return transaction;
     }
 
     public TransactionResponseDTO demoMoneyTransfer(Long userId, Long senderId, Long receiverId, BigDecimal amount, String currency) {

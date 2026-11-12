@@ -13,16 +13,21 @@ import org.springframework.transaction.annotation.Transactional;
 import com.github.wcordor.ledger.dtos.transactionDTO.*;
 import com.github.wcordor.ledger.entity.Account;
 import com.github.wcordor.ledger.entity.IdempotencyKey;
+import com.github.wcordor.ledger.entity.LedgerUser;
 import com.github.wcordor.ledger.entity.Transaction;
 import com.github.wcordor.ledger.exception.AccountNotFoundException;
 import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
 import com.github.wcordor.ledger.exception.InsufficientFundsException;
+import com.github.wcordor.ledger.exception.InvalidAccountIdException;
 import com.github.wcordor.ledger.exception.InvalidTransferException;
+import com.github.wcordor.ledger.exception.InvalidUsernameException;
 import com.github.wcordor.ledger.exception.TransactionNotFoundException;
+import com.github.wcordor.ledger.exception.UserNotFoundException;
 import com.github.wcordor.ledger.mapper.TransactionMapper;
 import com.github.wcordor.ledger.repository.AccountRepository;
 import com.github.wcordor.ledger.repository.IdempotencyKeyRepository;
 import com.github.wcordor.ledger.repository.TransactionRepository;
+import com.github.wcordor.ledger.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -32,14 +37,18 @@ public class TransactionService {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final AccountService accountService;
     private final TransactionMapper transactionMapper;
 
     public TransactionService(AccountRepository accountRepository, TransactionRepository transactionRepository,
-        IdempotencyKeyRepository idempotencyKeyRepository, AccountService accountService, TransactionMapper transactionMapper) {
+        UserRepository userRepository, IdempotencyKeyRepository idempotencyKeyRepository, AccountService accountService,
+        TransactionMapper transactionMapper) {
+            
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.userRepository = userRepository;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.accountService = accountService;
         this.transactionMapper = transactionMapper;
@@ -95,21 +104,36 @@ public class TransactionService {
     }
 
     @SuppressWarnings("null")
-    public List<String> getTransactions(Long accountId, Long userId) {
+    public List<String> getTransactions(String username, Long accountId) {
         Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new AccountNotFoundException(accountId));
+
+        Long userId = account.getUserId();
+        LedgerUser user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        
+        if (!username.equals(user.getUsername())) {
+            throw new InvalidUsernameException();
+        }
         
         return account.getTransactions().stream().map(Transaction::getAmountAndCurrency).toList();
     }
 
-    public TransactionResponseDTO getTransaction(Long transactionId, Long accountId, Long userId) {
-        accountService.getAccount(accountId, userId);
+    public TransactionResponseDTO getTransaction(String username, Long accountId, Long transactionId) {
+        Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(accountId));
+
+        Long userId = account.getUserId();
+        LedgerUser user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+
+        if (!username.equals(user.getUsername())) {
+            throw new InvalidUsernameException();
+        }
 
         Transaction transaction = transactionRepository.findById(transactionId)
-            .orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));
+            .orElseThrow(() -> new TransactionNotFoundException(transactionId));
 
         if (transaction.getSenderId() != accountId && transaction.getReceiverId() != accountId) {
-            throw new TransactionNotFoundException(transactionId, accountId);
+            throw new InvalidAccountIdException(accountId);
         }
 
         return transactionMapper.toDTO(transaction);

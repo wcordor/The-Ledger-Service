@@ -527,17 +527,17 @@ class LedgerApplicationTests {
 		TransactionCreationDTO creationDTO = new TransactionCreationDTO(account2_id, new BigDecimal("400.00"), "USD");
 		TransactionResponseDTO transactionDTO = transactionService.moneyTransfer(UUID.randomUUID().toString(), user_id, account_id, creationDTO);
 
-		List<String> transactions = transactionService.getTransactions(account_id, user_id);
+		List<String> transactions = transactionService.getTransactions(username, account_id);
 		assertEquals(1, transactions.size());
 
-		List<String> transactions2 = transactionService.getTransactions(account2_id, user2_id);
+		List<String> transactions2 = transactionService.getTransactions(username2, account2_id);
 		assertEquals(1, transactions2.size());
 
 		Transaction transaction = requestFactory.getDemoTransaction(transactionDTO.id(), account_id, user_id);
 		assertTrue(transactions.contains(transaction.getAmountAndCurrency()) && transactions2.contains(transaction.getAmountAndCurrency()));
 
-		TransactionResponseDTO actual = transactionService.getTransaction(transactionDTO.id(), account_id, user_id);
-		TransactionResponseDTO actual2 = transactionService.getTransaction(transactionDTO.id(), account2_id, user2_id);
+		TransactionResponseDTO actual = transactionService.getTransaction(username, account_id, transactionDTO.id());
+		TransactionResponseDTO actual2 = transactionService.getTransaction(username2, account2_id, transactionDTO.id());
 		long diffMillis = Math.abs(Duration.between(transactionDTO.timestamp(), actual.timestamp()).toMillis());
 		long diffMillis2 = Math.abs(Duration.between(transactionDTO.timestamp(), actual2.timestamp()).toMillis());
 
@@ -549,41 +549,42 @@ class LedgerApplicationTests {
 		assertTrue(diffMillis < 1 && diffMillis2 < 1);
 
 		assertThrows(TransactionNotFoundException.class, () -> {
-			transactionService.getTransaction(400L, account_id, user_id); 
+			transactionService.getTransaction(username, account_id, 400L); 
+		});
+
+		assertThrows(TransactionNotFoundException.class, () -> {
+			transactionService.getTransaction(username2, account2_id, 440L); 
+		});
+
+		assertThrows(InvalidUsernameException.class, () -> {
+			transactionService.getTransactions(username2, account_id);
+		});
+
+		assertThrows(InvalidUsernameException.class, () -> {
+			transactionService.getTransaction("user", account_id, transactionDTO.id());
+		});
+
+		assertThrows(AccountNotFoundException.class, () -> {
+			transactionService.getTransaction(username, 99L, transactionDTO.id());
+		});
+
+		assertThrows(AccountNotFoundException.class, () -> {
+			transactionService.getTransaction("user", 99L, transactionDTO.id());
+		});
+
+		assertThrows(AccountNotFoundException.class, () -> {
+			transactionService.getTransactions("user", 99L);
+		});
+
+		assertThrows(AccountNotFoundException.class, () -> {
+			transactionService.getTransactions(username, 99L);
 		});
 
 		AccountResponseDTO accountDTO3 = requestFactory.createDemoAccount(username2, "Account III", new BigDecimal("10.00"), "USD");
-		assertThrows(TransactionNotFoundException.class, () -> {
-			transactionService.getTransaction(transactionDTO.id(), accountDTO3.id(), user2_id); 
+		assertThrows(InvalidAccountIdException.class, () -> {
+			transactionService.getTransaction(username2, accountDTO3.id(), transactionDTO.id()); 
 		});
 
-		assertThrows(TransactionNotFoundException.class, () -> {
-			transactionService.getTransaction(440L, account2_id, user2_id); 
-		});
-
-		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransaction(transactionDTO.id(), 99L, user_id);
-		});
-
-		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransaction(transactionDTO.id(), account_id, 99L);
-		});
-
-		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransaction(transactionDTO.id(), 99L, 99L);
-		});
-
-		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransactions(99L, 99L);
-		});
-
-		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransactions(account2_id, 99L);
-		});
-
-		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransactions(99L, user_id);
-		});
 	}
 
 	@Test

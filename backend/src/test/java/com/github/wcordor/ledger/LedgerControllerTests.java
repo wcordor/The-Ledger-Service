@@ -637,51 +637,77 @@ class LedgerControllerTests {
     }
 
      @Test
-    void testTransactionGetRequest_All() {
+    void testTransactionGetRequest_All() throws Exception {
 
         List<String> mockTransactions = new ArrayList<>(List.of("Mock Transaction 1", "Mock Transaction 2"));
-        when(transactionService.getTransactions(eq(17L), eq(4L))).thenReturn(mockTransactions);
+        when(transactionService.getTransactions(eq("user"), eq(5L))).thenReturn(mockTransactions);
 
-        restTestClient.get().uri("/users/4/accounts/17/transactions").exchange().expectStatus().isOk()
-            .expectHeader().contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("$[0]")
-            .isEqualTo("Mock Transaction 1").jsonPath("$[1]").isEqualTo("Mock Transaction 2");
+        mockMvc.perform(get("/transactions/user/5")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/transactions/user/5").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(get("/transactions/user/5").with(user("user").roles("USER"))).andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$[0]").value("Mock Transaction 1"))
+            .andExpect(jsonPath("$[1]").value("Mock Transaction 2"));
 
-        when(transactionService.getTransactions(57L, 12L))
-            .thenThrow(new AccountNotFoundException(57L, 12L));
+        mockMvc.perform(get("/transactions/user/5").with(user("admin").roles("ADMIN"))).andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$[0]").value("Mock Transaction 1"))
+            .andExpect(jsonPath("$[1]").value("Mock Transaction 2"));
 
-        restTestClient.get().uri("/users/12/accounts/57/transactions").exchange().expectStatus().isNotFound()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Account 57 and/or User 12 may not exist, or Account 57 does not belong to User 12.");
+        when(transactionService.getTransactions("user", 122L))
+            .thenThrow(new AccountNotFoundException(122L));
+
+        mockMvc.perform(get("/transactions/user/122").with(user("user").roles("USER"))).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof AccountNotFoundException));
     }
 
     @Test
-    void testTransactionGetRequest_Single() {
+    void testTransactionGetRequest_Single() throws Exception {
 
         Instant timestamp = Instant.now();
         TransactionResponseDTO mockDTO = new TransactionResponseDTO(17L, 8L, new BigDecimal("100.00"),
             "USD", timestamp, 45L);
 
-        when(transactionService.getTransaction(eq(45L), eq(17L), eq(4L))).thenReturn(mockDTO);
+        when(transactionService.getTransaction(eq("user"), eq(17L), eq(45L))).thenReturn(mockDTO);
 
-        restTestClient.get().uri("/users/4/accounts/17/transactions/45").exchange().expectStatus().isOk().expectHeader()
-            .contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("senderId")
-            .isEqualTo(17L).jsonPath("receiverId").isEqualTo(8L).jsonPath("amount")
-            .isEqualTo(new BigDecimal("100.0")).jsonPath("currency").isEqualTo("USD")
-            .jsonPath("timestamp").isEqualTo(timestamp.toString()).jsonPath("id").isEqualTo(45L);
+        mockMvc.perform(get("/transactions/user/17/45")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/transactions/user/17/45").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(get("/transactions/user/17/45").with(user("user").roles("USER"))).andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("senderId").value(17L))
+            .andExpect(jsonPath("receiverId").value(8L))
+            .andExpect(jsonPath("amount").value(new BigDecimal("100.0")))
+            .andExpect(jsonPath("currency").value("USD"))
+            .andExpect(jsonPath("timestamp").value(timestamp.toString()))
+            .andExpect(jsonPath("id").value(45L));
+        
+        mockMvc.perform(get("/transactions/user/17/45").with(user("admin").roles("ADMIN"))).andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("senderId").value(17L))
+            .andExpect(jsonPath("receiverId").value(8L))
+            .andExpect(jsonPath("amount").value(new BigDecimal("100.0")))
+            .andExpect(jsonPath("currency").value("USD"))
+            .andExpect(jsonPath("timestamp").value(timestamp.toString()))
+            .andExpect(jsonPath("id").value(45L));
             
-        when(transactionService.getTransaction(eq(96L), eq(33L), eq(13L)))
-            .thenThrow(new AccountNotFoundException(33L, 13L));
+        when(transactionService.getTransaction(eq("user"), eq(13L), eq(33L)))
+            .thenThrow(new AccountNotFoundException(13L));
 
-        restTestClient.get().uri("/users/13/accounts/33/transactions/96").exchange().expectStatus().isNotFound()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Account 33 and/or User 13 may not exist, or Account 33 does not belong to User 13.");
+        mockMvc.perform(get("/transactions/user/13/33")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/transactions/user/13/33").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(get("/transactions/user/13/33").with(user("user").roles("USER"))).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof AccountNotFoundException));
 
-        when(transactionService.getTransaction(eq(1044L), eq(257L), eq(86L)))
-            .thenThrow(new TransactionNotFoundException(1044L, 257L));
+        when(transactionService.getTransaction(eq("user"), eq(86L), eq(257L)))
+            .thenThrow(new TransactionNotFoundException(257L));
 
-        restTestClient.get().uri("/users/86/accounts/257/transactions/1044").exchange().expectStatus().isNotFound()
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)
-            .isEqualTo("Transaction 1044 either does not exist or does not belong to account 257.");
+        mockMvc.perform(get("/transactions/user/86/257")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/transactions/user/86/257").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
+        mockMvc.perform(get("/transactions/user/86/257").with(user("user").roles("USER"))).andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof TransactionNotFoundException));
     }
 
     @Test
@@ -719,7 +745,7 @@ class LedgerControllerTests {
             .expectBody(String.class).isEqualTo("Account receiving funds must not be the account sending the funds.");
 
         when(transactionService.moneyTransfer(eq("key"), eq(140L), eq(549L), any(TransactionCreationDTO.class)))
-            .thenThrow(new AccountNotFoundException(549L, 140L));
+            .thenThrow(new AccountNotFoundException(549L/*, 140L*/));
 
         restTestClient.post().uri("/users/140/accounts/549/money-transfer")
             .header("Idempotency-Key", "key").body(mockBody).exchange().expectStatus().is4xxClientError()
