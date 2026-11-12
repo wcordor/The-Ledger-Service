@@ -120,8 +120,8 @@ public class Demo {
 			Long account5_id = accountDTO5.id();
 			Long account7_id = accountDTO7.id();
 
-			accountDTO5 = accountService.getAccount(account5_id);
-			accountDTO7 = accountService.getAccount(account7_id);
+			accountDTO5 = accountService.getAccount(username2, account5_id);
+			accountDTO7 = accountService.getAccount(username3, account7_id);
 			BigDecimal account5_bal = accountDTO5.balance();
 			BigDecimal account7_bal = accountDTO7.balance();
 			String account5_currency = accountDTO5.currency();
@@ -135,8 +135,8 @@ public class Demo {
 			TransactionResponseDTO transactionDTO = requestFactory.demoMoneyTransfer(user2_id,
 				account5_id, account7_id, new BigDecimal("500.00"), "USD");
 
-			accountDTO5 = accountService.getAccount(account5_id);
-			accountDTO7 = accountService.getAccount(account7_id);
+			accountDTO5 = accountService.getAccount(username2, account5_id);
+			accountDTO7 = accountService.getAccount(username3, account7_id);
 			account5_bal = accountDTO5.balance();
 			account7_bal = accountDTO7.balance();
 
@@ -168,8 +168,8 @@ public class Demo {
 				logger.info("");
 			}
 
-			accountDTO5 = accountService.getAccount(account5_id);
-			accountDTO7 = accountService.getAccount(account7_id);
+			accountDTO5 = accountService.getAccount(username2, account5_id);
+			accountDTO7 = accountService.getAccount(username3, account7_id);
 			BigDecimal account5_bal_rolledBack = accountDTO5.balance();
 			BigDecimal account7_bal_rolledBack = accountDTO7.balance();
 
@@ -185,7 +185,7 @@ public class Demo {
 			}
 
 			Long account9_id = accountDTO9.id();
-			accountDTO9 = accountService.getAccount(account9_id);
+			accountDTO9 = accountService.getAccount(username4, account9_id);
 			BigDecimal account9_bal = accountDTO9.balance();
 			String account9_currency = accountDTO9.currency();
 			
@@ -229,9 +229,9 @@ public class Demo {
 			CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 			accountRepository.flush();
 
-			accountDTO5 = accountService.getAccount(account5_id);
-			accountDTO7 = accountService.getAccount(account7_id);
-			accountDTO9 = accountService.getAccount(account9_id);
+			accountDTO5 = accountService.getAccount(username2, account5_id);
+			accountDTO7 = accountService.getAccount(username3, account7_id);
+			accountDTO9 = accountService.getAccount(username4, account9_id);
 
 			account9_bal = accountDTO9.balance();
 			account5_bal = accountDTO5.balance();

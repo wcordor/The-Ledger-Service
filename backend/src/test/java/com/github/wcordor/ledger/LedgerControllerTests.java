@@ -45,6 +45,7 @@ import com.github.wcordor.ledger.exception.AccountNotFoundException;
 import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
 import com.github.wcordor.ledger.exception.InsufficientFundsException;
 import com.github.wcordor.ledger.exception.InvalidTransferException;
+import com.github.wcordor.ledger.exception.InvalidUsernameException;
 import com.github.wcordor.ledger.exception.NullPatchFieldException;
 import com.github.wcordor.ledger.exception.TransactionNotFoundException;
 import com.github.wcordor.ledger.exception.UserDeletionFailureException;
@@ -448,7 +449,7 @@ class LedgerControllerTests {
         AccountResponseDTO mockDTO = new AccountResponseDTO("GET", new BigDecimal("1000.00"),
             "USD", "user", mockTransactions, 5L);
 
-        when(accountService.getAccount(eq(5L))).thenReturn(mockDTO);
+        when(accountService.getAccount(eq("user"), eq(5L))).thenReturn(mockDTO);
 
         mockMvc.perform(get("/accounts/user/5")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/accounts/user/5").with(user("not_user").roles("USER"))).andExpect(status().isForbidden());
@@ -461,7 +462,7 @@ class LedgerControllerTests {
             .andExpect(jsonPath("transactions").value(mockTransactions))
             .andExpect(jsonPath("id").value(5L));
             
-        when(accountService.getAccount(eq(89L))).thenThrow(new AccountNotFoundException(89L));
+        when(accountService.getAccount(eq("user"), eq(89L))).thenThrow(new AccountNotFoundException(89L));
 
         mockMvc.perform(get("/accounts/user/89").with(user("user").roles("USER"))).andExpect(status().isNotFound())
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))

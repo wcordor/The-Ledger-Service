@@ -205,7 +205,7 @@ class LedgerApplicationTests {
 		assertEquals(2, accountList.size());
 		assertTrue(accountList.contains(account.getInfo()) && accountList.contains(account3.getInfo()));
 
-		AccountResponseDTO getAccount = accountService.getAccount(account3_id);
+		AccountResponseDTO getAccount = accountService.getAccount(username, account3_id);
 		assertEquals(accountDTO3, getAccount);
 
 		AccountPatchDTO patchDTO = new AccountPatchDTO(JsonNullable.of("Savings"));
@@ -239,7 +239,7 @@ class LedgerApplicationTests {
 		assertTrue(accountList.size() == 1 && accountList.contains(account.getInfo()));
 
 		assertThrows(AccountNotFoundException.class, () -> {
-			accountService.getAccount(account3_id);
+			accountService.getAccount(username, account3_id);
 		});
 
 		assertThrows(UserNotFoundException.class, () -> {
@@ -423,8 +423,8 @@ class LedgerApplicationTests {
 		TransactionCreationDTO creationDTO = new TransactionCreationDTO(account2_id, new BigDecimal("400.00"), "USD");
 		TransactionResponseDTO transactionDTO = transactionService.moneyTransfer(UUID.randomUUID().toString(), user_id, account_id, creationDTO);
 
-		accountDTO = accountService.getAccount(account_id);
-		accountDTO2 = accountService.getAccount(account2_id);
+		accountDTO = accountService.getAccount(username, account_id);
+		accountDTO2 = accountService.getAccount(username2, account2_id);
 
 		assertEquals(new BigDecimal("600.00"), accountDTO2.balance());
 		assertEquals(new BigDecimal("600.00"), accountDTO.balance());
@@ -440,8 +440,8 @@ class LedgerApplicationTests {
 			logger.error("ERROR: " + e.getMessage());
 		}
 
-        accountDTO = accountService.getAccount(account_id);
-		accountDTO2 = accountService.getAccount(account2_id);
+        accountDTO = accountService.getAccount(username, account_id);
+		accountDTO2 = accountService.getAccount(username2, account2_id);
 
 		assertEquals(new BigDecimal("600.00"), accountDTO2.balance());
 		assertEquals(new BigDecimal("600.00"), accountDTO.balance());
@@ -599,8 +599,8 @@ class LedgerApplicationTests {
 		CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 		accountRepository.flush();
 
-		accountDTO = accountService.getAccount(account_id);
-		accountDTO2 = accountService.getAccount(account2_id);
+		accountDTO = accountService.getAccount(username, account_id);
+		accountDTO2 = accountService.getAccount(username2, account2_id);
 
 		assertEquals(new BigDecimal("500.00"), accountDTO.balance());
 		assertEquals(new BigDecimal("700.00"), accountDTO2.balance());
@@ -634,8 +634,8 @@ class LedgerApplicationTests {
 		CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 		accountRepository.flush();
 
-		accountDTO = accountService.getAccount(account_id);
-		accountDTO2 = accountService.getAccount(account2_id);
+		accountDTO = accountService.getAccount(username, account_id);
+		accountDTO2 = accountService.getAccount(username2, account2_id);
 
 		assertEquals(new BigDecimal("10.00"), accountDTO.balance());
 		assertEquals(new BigDecimal("1190.00"), accountDTO2.balance());

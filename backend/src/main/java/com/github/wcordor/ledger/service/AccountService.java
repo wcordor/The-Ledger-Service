@@ -14,6 +14,7 @@ import com.github.wcordor.ledger.entity.LedgerUser;
 import com.github.wcordor.ledger.exception.AccountDeletionFailureException;
 import com.github.wcordor.ledger.exception.AccountNotFoundException;
 import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
+import com.github.wcordor.ledger.exception.InvalidUsernameException;
 import com.github.wcordor.ledger.exception.NullPatchFieldException;
 import com.github.wcordor.ledger.exception.UserNotFoundException;
 import com.github.wcordor.ledger.mapper.AccountMapper;
@@ -66,9 +67,16 @@ public class AccountService {
         return accountRepository.findByUser_Id(id).stream().map(Account::getInfo).toList();
     }
 
-    public AccountResponseDTO getAccount(Long accountId) {
+    public AccountResponseDTO getAccount(String username, Long accountId) {
         Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new AccountNotFoundException(accountId));
+
+        Long userId = account.getUserId();
+        LedgerUser user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        
+        if (!username.equals(user.getUsername())) {
+            throw new InvalidUsernameException();
+        }
 
         return accountMapper.toDTO(account);
     }
