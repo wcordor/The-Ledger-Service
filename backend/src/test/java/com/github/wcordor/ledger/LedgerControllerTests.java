@@ -470,7 +470,7 @@ class LedgerControllerTests {
 
         when(accountService.getAccount(eq("user"), eq(150L))).thenThrow(new InvalidUsernameException());
 
-        mockMvc.perform(get("/accounts/user/150").with(user("user").roles("USER"))).andExpect(status().isConflict())
+        mockMvc.perform(get("/accounts/user/150").with(user("user").roles("USER"))).andExpect(status().isForbidden())
             .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof InvalidUsernameException));
     }

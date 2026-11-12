@@ -25,7 +25,7 @@ public class AccountExceptionAdvice {
   }
 
   @ExceptionHandler(InvalidUsernameException.class)
-  @ResponseStatus(HttpStatus.CONFLICT)
+  @ResponseStatus(HttpStatus.FORBIDDEN)
   public String invalidUsernameHandler(InvalidUsernameException e) {
     return e.getMessage();
   }
