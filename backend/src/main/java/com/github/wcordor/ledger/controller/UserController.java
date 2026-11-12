@@ -94,14 +94,14 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(idempotencyKey, username, accountDTO));
 	}
 
-	@PatchMapping("accounts/{username}/{accountId}")
+	@PatchMapping("/accounts/{username}/{accountId}")
 	public ResponseEntity<?> changeAccountName(@RequestHeader("Idempotency-Key") String idempotencyKey, @PathVariable("accountId") Long accountId,
 		@RequestBody AccountPatchDTO patchDTO) {
 
 		return ResponseEntity.ok(accountService.changeName(idempotencyKey, accountId, patchDTO));
 	}
 
-	@DeleteMapping("admin/{accountId}/remove")
+	@DeleteMapping("/admin/{accountId}/remove")
 	public ResponseEntity<?> deleteAccount(@PathVariable("accountId") Long accountId) {
 		accountService.deleteAccount(accountId);
 
