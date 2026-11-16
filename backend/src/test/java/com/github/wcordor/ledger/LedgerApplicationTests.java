@@ -580,9 +580,11 @@ class LedgerApplicationTests {
 			transactionService.getTransactions(username, 99L);
 		});
 
-		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransactions(99L, user_id);
+		AccountResponseDTO accountDTO3 = requestFactory.createDemoAccount(username2, "Account III", new BigDecimal("10.00"), "USD");
+		assertThrows(InvalidAccountIdException.class, () -> {
+			transactionService.getTransaction(username2, accountDTO3.id(), transactionDTO.id()); 
 		});
+
 	}
 
 	@Test
