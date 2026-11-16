@@ -36,6 +36,10 @@ public class SecurityConfig {
 					"#username == authentication.name"))
 				.requestMatchers("/accounts/{username}").access(new WebExpressionAuthorizationManager(
 					"#username == authentication.name or hasRole('ADMIN')"))
+					.requestMatchers("/transactions/{username}/{accountId}/{transactionId}").access(new WebExpressionAuthorizationManager(
+					"#username == authentication.name or hasRole('ADMIN')"))
+				.requestMatchers("/transactions/{username}/{accountId}").access(new WebExpressionAuthorizationManager(
+					"#username == authentication.name or hasRole('ADMIN')"))
         		.anyRequest().authenticated()
 			)
 			.httpBasic(Customizer.withDefaults())
