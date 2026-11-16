@@ -527,17 +527,17 @@ class LedgerApplicationTests {
 		TransactionCreationDTO creationDTO = new TransactionCreationDTO(account2_id, new BigDecimal("400.00"), "USD");
 		TransactionResponseDTO transactionDTO = transactionService.moneyTransfer(UUID.randomUUID().toString(), user_id, account_id, creationDTO);
 
-		List<String> transactions = transactionService.getTransactions(account_id, user_id);
+		List<String> transactions = transactionService.getTransactions(username, account_id);
 		assertEquals(1, transactions.size());
 
-		List<String> transactions2 = transactionService.getTransactions(account2_id, user2_id);
+		List<String> transactions2 = transactionService.getTransactions(username2, account2_id);
 		assertEquals(1, transactions2.size());
 
 		Transaction transaction = requestFactory.getDemoTransaction(transactionDTO.id(), account_id, user_id);
 		assertTrue(transactions.contains(transaction.getAmountAndCurrency()) && transactions2.contains(transaction.getAmountAndCurrency()));
 
-		TransactionResponseDTO actual = transactionService.getTransaction(transactionDTO.id(), account_id, user_id);
-		TransactionResponseDTO actual2 = transactionService.getTransaction(transactionDTO.id(), account2_id, user2_id);
+		TransactionResponseDTO actual = transactionService.getTransaction(username, account_id, transactionDTO.id());
+		TransactionResponseDTO actual2 = transactionService.getTransaction(username2, account2_id, transactionDTO.id());
 		long diffMillis = Math.abs(Duration.between(transactionDTO.timestamp(), actual.timestamp()).toMillis());
 		long diffMillis2 = Math.abs(Duration.between(transactionDTO.timestamp(), actual2.timestamp()).toMillis());
 
