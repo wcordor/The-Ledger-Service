@@ -96,15 +96,14 @@ public class TransactionService {
     }
 
     @SuppressWarnings("null")
-    public List<String> getTransactions(Long accountId, Long userId) {
+    public List<String> getTransactions(String username, Long accountId) {
         Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new AccountNotFoundException(accountId));
         
         return account.getTransactions().stream().map(Transaction::getAmountAndCurrency).toList();
     }
 
-    public TransactionResponseDTO getTransaction(Long transactionId, Long accountId, Long userId) {
-        accountService.getAccount(accountId, userId);
+    public TransactionResponseDTO getTransaction(String username, Long accountId, Long transactionId) {
 
         Transaction transaction = transactionRepository.findById(transactionId)
             .orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));

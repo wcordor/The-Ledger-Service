@@ -661,7 +661,7 @@ class LedgerControllerTests {
         TransactionResponseDTO mockDTO = new TransactionResponseDTO(17L, 8L, new BigDecimal("100.00"),
             "USD", timestamp, 45L);
 
-        when(transactionService.getTransaction(eq(45L), eq(17L), eq(4L))).thenReturn(mockDTO);
+        when(transactionService.getTransaction(eq("user"), eq(17L), eq(45L))).thenReturn(mockDTO);
 
         restTestClient.get().uri("/users/4/accounts/17/transactions/45").exchange().expectStatus().isOk().expectHeader()
             .contentType(MediaType.APPLICATION_JSON).expectBody().jsonPath("senderId")
@@ -669,8 +669,8 @@ class LedgerControllerTests {
             .isEqualTo(new BigDecimal("100.0")).jsonPath("currency").isEqualTo("USD")
             .jsonPath("timestamp").isEqualTo(timestamp.toString()).jsonPath("id").isEqualTo(45L);
             
-        when(transactionService.getTransaction(eq(96L), eq(33L), eq(13L)))
-            .thenThrow(new AccountNotFoundException(33L, 13L));
+        when(transactionService.getTransaction(eq("user"), eq(13L), eq(33L)))
+            .thenThrow(new AccountNotFoundException(13L));
 
         restTestClient.get().uri("/users/13/accounts/33/transactions/96").exchange().expectStatus().isNotFound()
             .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN).expectBody(String.class)

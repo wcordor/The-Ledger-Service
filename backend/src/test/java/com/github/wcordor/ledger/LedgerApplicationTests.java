@@ -549,36 +549,35 @@ class LedgerApplicationTests {
 		assertTrue(diffMillis < 1 && diffMillis2 < 1);
 
 		assertThrows(TransactionNotFoundException.class, () -> {
-			transactionService.getTransaction(400L, account_id, user_id); 
-		});
-
-		AccountResponseDTO accountDTO3 = requestFactory.createDemoAccount(username2, "Account III", new BigDecimal("10.00"), "USD");
-		assertThrows(TransactionNotFoundException.class, () -> {
-			transactionService.getTransaction(transactionDTO.id(), accountDTO3.id(), user2_id); 
+			transactionService.getTransaction(username, account_id, 400L); 
 		});
 
 		assertThrows(TransactionNotFoundException.class, () -> {
-			transactionService.getTransaction(440L, account2_id, user2_id); 
+			transactionService.getTransaction(username2, account2_id, 440L); 
+		});
+
+		assertThrows(InvalidUsernameException.class, () -> {
+			transactionService.getTransactions(username2, account_id);
+		});
+
+		assertThrows(InvalidUsernameException.class, () -> {
+			transactionService.getTransaction("user", account_id, transactionDTO.id());
 		});
 
 		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransaction(transactionDTO.id(), 99L, user_id);
+			transactionService.getTransaction(username, 99L, transactionDTO.id());
 		});
 
 		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransaction(transactionDTO.id(), account_id, 99L);
+			transactionService.getTransaction("user", 99L, transactionDTO.id());
 		});
 
 		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransaction(transactionDTO.id(), 99L, 99L);
+			transactionService.getTransactions("user", 99L);
 		});
 
 		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransactions(99L, 99L);
-		});
-
-		assertThrows(AccountNotFoundException.class, () -> {
-			transactionService.getTransactions(account2_id, 99L);
+			transactionService.getTransactions(username, 99L);
 		});
 
 		assertThrows(AccountNotFoundException.class, () -> {

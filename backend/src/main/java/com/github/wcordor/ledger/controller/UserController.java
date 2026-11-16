@@ -117,17 +117,17 @@ public class UserController {
 		);
 	}
 
-	@GetMapping("users/{id}/accounts/{accountId}/transactions")
-	public List<String> allTransactions(@PathVariable("id") Long userId,
+	@GetMapping("/transactions/{username}/{accountId}")
+	public List<String> allTransactions(@PathVariable("username") String username,
 		@PathVariable("accountId") Long accountId) {
 
-		return transactionService.getTransactions(accountId, userId);
+		return transactionService.getTransactions(username, accountId);
 	}
 
-	@GetMapping("users/{id}/accounts/{accountId}/transactions/{transactionId}")
-    public TransactionResponseDTO oneTransaction(@PathVariable("id") Long userId,
+	@GetMapping("/transactions/{username}/{accountId}/{transactionId}")
+    public TransactionResponseDTO oneTransaction(@PathVariable("username") String username,
 		@PathVariable("accountId") Long accountId, @PathVariable("transactionId") Long transactionId) {
 
-		return transactionService.getTransaction(transactionId, accountId, userId);
+		return transactionService.getTransaction(username, accountId, transactionId);
 	}
 }
