@@ -17,6 +17,7 @@ import com.github.wcordor.ledger.entity.Transaction;
 import com.github.wcordor.ledger.exception.AccountNotFoundException;
 import com.github.wcordor.ledger.exception.IdempotencyKeyAlreadyExistsException;
 import com.github.wcordor.ledger.exception.InsufficientFundsException;
+import com.github.wcordor.ledger.exception.InvalidAccountIdException;
 import com.github.wcordor.ledger.exception.InvalidTransferException;
 import com.github.wcordor.ledger.exception.TransactionNotFoundException;
 import com.github.wcordor.ledger.mapper.TransactionMapper;
@@ -109,7 +110,7 @@ public class TransactionService {
             .orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));
 
         if (transaction.getSenderId() != accountId && transaction.getReceiverId() != accountId) {
-            throw new TransactionNotFoundException(transactionId, accountId);
+            throw new InvalidAccountIdException(accountId);
         }
 
         return transactionMapper.toDTO(transaction);
