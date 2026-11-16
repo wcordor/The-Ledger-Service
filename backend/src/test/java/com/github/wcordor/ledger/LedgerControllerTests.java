@@ -771,7 +771,7 @@ class LedgerControllerTests {
             .expectBody(String.class).isEqualTo("Account receiving funds must not be the account sending the funds.");
 
         when(transactionService.moneyTransfer(eq("key"), eq(140L), eq(549L), any(TransactionCreationDTO.class)))
-            .thenThrow(new AccountNotFoundException(549L, 140L));
+            .thenThrow(new AccountNotFoundException(549L/*, 140L*/));
 
         restTestClient.post().uri("/users/140/accounts/549/money-transfer")
             .header("Idempotency-Key", "key").body(mockBody).exchange().expectStatus().is4xxClientError()
