@@ -78,7 +78,7 @@ public class DemoRequestFactory {
             throw new InvalidAccountIdException(accountId);
         }
 
-        return transactionRepository.findById(transactionId).orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));
+        return transaction;
     }
 
     public TransactionResponseDTO demoMoneyTransfer(Long userId, Long senderId, Long receiverId, BigDecimal amount, String currency) {
