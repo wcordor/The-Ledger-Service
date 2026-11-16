@@ -72,7 +72,7 @@ public class DemoRequestFactory {
         getDemoAccount(accountId, userId);
 
         Transaction transaction = transactionRepository.findById(transactionId)
-            .orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));
+            .orElseThrow(() -> new TransactionNotFoundException(transactionId));
 
         if (transaction.getSenderId() != accountId && transaction.getReceiverId() != accountId) {
             throw new InvalidAccountIdException(accountId);

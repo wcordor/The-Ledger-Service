@@ -106,7 +106,7 @@ public class TransactionService {
     public TransactionResponseDTO getTransaction(String username, Long accountId, Long transactionId) {
 
         Transaction transaction = transactionRepository.findById(transactionId)
-            .orElseThrow(() -> new TransactionNotFoundException(transactionId, accountId));
+            .orElseThrow(() -> new TransactionNotFoundException(transactionId));
 
         if (transaction.getSenderId() != accountId && transaction.getReceiverId() != accountId) {
             throw new InvalidAccountIdException(accountId);
